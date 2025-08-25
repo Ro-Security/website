@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard | Ro-Security</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .gradient-text { background: linear-gradient(90deg, #4F46E5, #A855F7); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .card { background-color: #1a1a2e; border: 1px solid #2a2a4a; }
+        .btn { transition: background-color 0.3s ease; }
+        .modal-bg { background-color: rgba(0, 0, 0, 0.7); display: flex; }
+    </style>
+</head>
+<body class="bg-[#0f0f1b] text-gray-300">
+
+    <!-- Header -->
+    <header class="container mx-auto px-6 py-4 flex justify-between items-center border-b border-gray-800">
+        <div class="flex items-center space-x-3">
+            <img src="https://cdn.discordapp.com/attachments/1408873785171513355/1409613249313505401/raw-removebg-preview.png?ex=68ae0423&is=68acb2a3&hm=874d42baf21d2841d2364a3c520a868179e47ded2f4f959563677a1f0b143557&" alt="Ro-Security Logo" class="h-10 w-10">
+            <span class="text-2xl font-bold text-white">Ro-Security</span>
+        </div>
+        <div id="user-info" class="hidden items-center space-x-4">
+            <span id="username" class="font-semibold text-white"></span>
+            <img id="avatar" class="h-10 w-10 rounded-full" src="" alt="User Avatar">
+            <button id="logout-button" class="bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-4 rounded-lg btn">Logout</button>
+        </div>
+        <div id="login-container">
+             <button id="login-button" class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-4 rounded-lg btn">Login with Discord</button>
+        </div>
+    </header>
+
+    <!-- Main Dashboard Content -->
+    <main id="dashboard-content" class="container mx-auto px-6 py-12 hidden">
+        <h1 class="text-3xl font-bold text-white">Your Monitored Groups</h1>
+        <div id="group-list" class="mt-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <!-- Group cards will be injected here -->
+        </div>
+    </main>
+
+    <!-- Settings Modal (Initially Hidden) -->
+    <div id="settings-modal" class="fixed inset-0 modal-bg items-center justify-center hidden">
+        <div class="card rounded-lg w-full max-w-2xl p-8 m-4">
+            <h2 class="text-2xl font-bold text-white mb-6">Manage Settings for <span id="modal-group-name" class="gradient-text"></span></h2>
+            
+            <form id="settings-form">
+                <div class="mb-4">
+                    <label for="abuse-threshold" class="block text-sm font-medium text-gray-300">Rank Abuse Threshold</label>
+                    <input type="number" id="abuse-threshold" class="mt-1 block w-full bg-[#0f0f1b] border border-gray-600 rounded-md shadow-sm py-2 px-3 text-white focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
+                </div>
+                <div class="mt-8 flex justify-end space-x-4">
+                    <button type="button" id="modal-close-button" class="bg-gray-600 hover:bg-gray-700 text-white font-semibold py-2 px-4 rounded-lg btn">Cancel</button>
+                    <button type="submit" class="bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-4 rounded-lg btn">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const API_BASE_URL = 'http://127.0.0.1:5000'; // This MUST be your backend server's public URL in production
+            
+            const userInfoDiv = document.getElementById('user-info');
+            const loginContainer = document.getElementById('login-container');
+            const dashboardContent = document.getElementById('dashboard-content');
+            const usernameSpan = document.getElementById('username');
+            const avatarImg = document.getElementById('avatar');
+            const loginButton = document.getElementById('login-button');
+            const logoutButton = document.getElementById('logout-button');
+            const groupListDiv = document.getElementById('group-list');
+
+            let userToken = null;
+
+            // --- 1. Authentication ---
+            function checkAuth() {
+                const fragment = new URLSearchParams(window.location.hash.slice(1));
+                const token = fragment.get('token') || localStorage.getItem('ro-security-token');
+
+                if (token) {
+                    userToken = token;
+                    localStorage.setItem('ro-security-token', token);
+                    window.location.hash = ''; // Clean the URL
+                    fetchUserInfo();
+                } else {
+                    showLoginState();
+                }
+            }
+
+            async function fetchUserInfo() {
+                try {
+                    const response = await fetch(`${API_BASE_URL}/api/user`, {
+                        headers: { 'Authorization': `Bearer ${userToken}` }
+                    });
+                    if (!response.ok) throw new Error('Failed to fetch user info');
+                    
+                    const user = await response.json();
+                    // In a real app, you'd get the full user object from Discord
+                    // For this example, we'll just use the ID and a placeholder name
+                    usernameSpan.textContent = user.username;
+                    // You would fetch the avatar from the full user object
+                    // avatarImg.src = `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png`;
+                    showDashboardState();
+                    loadGroups();
+                } catch (error) {
+                    console.error(error);
+                    logout();
+                }
+            }
+
+            function logout() {
+                userToken = null;
+                localStorage.removeItem('ro-security-token');
+                showLoginState();
+            }
+
+            function showLoginState() {
+                userInfoDiv.classList.add('hidden');
+                dashboardContent.classList.add('hidden');
+                loginContainer.classList.remove('hidden');
+            }
+
+            function showDashboardState() {
+                loginContainer.classList.add('hidden');
+                userInfoDiv.classList.remove('hidden');
+                dashboardContent.classList.remove('hidden');
+            }
+
+            // --- 2. Data Loading ---
+            async function loadGroups() {
+                groupListDiv.innerHTML = '<p>Loading your groups...</p>';
+                try {
+                    const response = await fetch(`${API_BASE_URL}/api/groups`, {
+                        headers: { 'Authorization': `Bearer ${userToken}` }
+                    });
+                    if (!response.ok) throw new Error('Failed to fetch groups');
+
+                    const groups = await response.json();
+                    renderGroups(groups);
+                } catch (error) {
+                    console.error(error);
+                    groupListDiv.innerHTML = `<p class="text-red-400">Error loading groups. Please ensure the backend is running and reachable.</p>`;
+                }
+            }
+
+            function renderGroups(groups) {
+                groupListDiv.innerHTML = ''; // Clear existing
+                
+                if (groups.length === 0) {
+                     groupListDiv.innerHTML = '<p>You are not monitoring any groups yet.</p>';
+                } else {
+                    groups.forEach(group => {
+                        const card = document.createElement('div');
+                        card.className = 'card p-6 rounded-lg flex flex-col justify-between';
+                        // The group name is a placeholder as the simplified backend doesn't fetch it
+                        card.innerHTML = `
+                            <div>
+                                <div class="flex items-center justify-between">
+                                    <h2 class="text-xl font-bold text-white">Group ID: ${group.group_id}</h2>
+                                    <span class="text-xs font-semibold bg-green-500/20 text-green-400 px-2 py-1 rounded-full">Active</span>
+                                </div>
+                                <p class="text-sm text-gray-400 mt-1">Owner ID: ${group.owner_user_id}</p>
+                            </div>
+                            <div class="mt-6">
+                                <button class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-4 rounded-lg btn" data-group-id="${group.group_id}">Manage Settings</button>
+                            </div>
+                        `;
+                        groupListDiv.appendChild(card);
+                    });
+                }
+
+                // Add the "Add New Group" card
+                const addCard = document.createElement('div');
+                addCard.className = 'card p-6 rounded-lg border-2 border-dashed border-gray-600 hover:border-indigo-500 transition-colors flex items-center justify-center cursor-pointer';
+                addCard.innerHTML = `
+                    <div class="text-center">
+                        <svg class="w-12 h-12 mx-auto text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg>
+                        <p class="mt-2 font-semibold text-white">Add New Group</p>
+                    </div>
+                `;
+                addCard.addEventListener('click', () => {
+                    // In a real app, this would open a modal to add a new group
+                    alert('This would open a form to add a new group.');
+                });
+                groupListDiv.appendChild(addCard);
+            }
+
+            // --- 3. Event Listeners ---
+            loginButton.addEventListener('click', () => {
+                window.location.href = `${API_BASE_URL}/login`;
+            });
+
+            logoutButton.addEventListener('click', logout);
+
+            // --- Initial Load ---
+            checkAuth();
+        });
+    </script>
+
+</body>
+</html>
