@@ -291,7 +291,7 @@
                     const response = await fetch(`${API_BASE_URL}/api/group/${groupId}/settings`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${userToken}` },
-                        body: JSON.stringify(updatedSettings)
+                        body: JSON.stringify("Saved changes")
                     });
 
                     const result = await response.json();
