@@ -17,6 +17,8 @@
         .toggle-bg:after { content: ''; position: absolute; top: 2px; left: 2px; background: white; border-radius: 9999px; height: 1.25rem; width: 1.25rem; transition: transform 0.2s ease-in-out; }
         input:checked + .toggle-bg:after { transform: translateX(100%); }
         input:checked + .toggle-bg { background-color: #4F46E5; }
+        .premium-feature { opacity: 0.5; cursor: not-allowed; }
+        .premium-feature input, .premium-feature select, .premium-feature textarea { pointer-events: none; }
     </style>
 </head>
 <body class="bg-[#0f0f1b] text-gray-300">
@@ -66,9 +68,9 @@
                                 </div>
                             </div>
                         </div>
-                        <div class="mb-6 p-4 border border-gray-700 rounded-lg">
+                        <div id="exile-guard-section" class="mb-6 p-4 border border-gray-700 rounded-lg">
                             <div class="flex items-center justify-between">
-                                <h3 class="font-semibold text-white">⚔️ Exile Guard</h3>
+                                <h3 class="font-semibold text-white">⚔️ Exile Guard <span class="text-xs text-purple-400"></span></h3>
                                 <label class="relative inline-flex items-center cursor-pointer"><input type="checkbox" id="exile-guard-enabled" class="sr-only peer"><div class="w-11 h-6 bg-gray-600 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div></label>
                             </div>
                             <div class="mt-3">
@@ -78,9 +80,9 @@
                         </div>
                     </div>
                     <div>
-                        <div class="mb-6 p-4 border border-gray-700 rounded-lg">
+                        <div id="wall-mod-section" class="mb-6 p-4 border border-gray-700 rounded-lg">
                              <div class="flex items-center justify-between">
-                                <h3 class="font-semibold text-white">🗑️ Wall Moderation</h3>
+                                <h3 class="font-semibold text-white">🗑️ Wall Moderation <span class="text-xs text-purple-400"></span></h3>
                                 <label class="relative inline-flex items-center cursor-pointer"><input type="checkbox" id="wall-mod-enabled" class="sr-only peer"><div class="w-11 h-6 bg-gray-600 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div></label>
                             </div>
                             <div class="mt-3 space-y-4">
@@ -145,6 +147,7 @@
                     if (!response.ok) throw new Error('Failed to fetch user info');
                     const user = await response.json();
                     usernameSpan.textContent = user.username;
+                    userSubscription = user.subscription;
                     showDashboardState();
                     loadGroups();
                 } catch (error) {
@@ -274,12 +277,11 @@
                         body: JSON.stringify(updatedSettings)
                     });
 
+                    const errorData = await response.json();
                     if (!response.ok) {
-                        const errorData = await response.json();
                         throw new Error(errorData.error || 'Failed to save settings');
                     }
                     
-                    const result = await response.json();
                     alert(result.message);
                     closeSettingsModal();
                 } catch (error) {
