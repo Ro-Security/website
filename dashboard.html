@@ -143,7 +143,7 @@
                     if (user.avatar) {
                         avatarImg.src = `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png`;
                     } else {
-                        avatarImg.src = `https://cdn.discordapp.com/embed/avatars/${(user.id >> 22) % 6}.png`;
+                        avatarImg.src = `https://cdn.discordapp.com/embed/avatars/${(BigInt(user.id) >> 22n) % 6n}.png`;
                     }
                     userSubscription = user.subscription;
                     showDashboardState();
