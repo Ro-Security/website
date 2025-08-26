@@ -44,57 +44,49 @@
         <div id="group-list" class="mt-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
     </main>
 
-    <!-- Settings Modal (Updated with Premium sections) -->
+     <!-- Settings Modal -->
     <div id="settings-modal" class="fixed inset-0 modal-bg items-center justify-center hidden">
-        <div class="card rounded-lg w-full max-w-3xl p-8 m-4 max-h-[90vh] overflow-y-auto">
+        <div class="card rounded-lg w-full max-w-4xl p-8 m-4 max-h-[90vh] overflow-y-auto">
             <div class="flex justify-between items-center mb-6">
                 <h2 class="text-2xl font-bold text-white">Manage Settings for <span id="modal-group-name" class="gradient-text"></span></h2>
                 <button id="modal-close-button" class="text-gray-400 hover:text-white text-3xl">&times;</button>
             </div>
             <form id="settings-form">
                 <input type="hidden" id="modal-group-id">
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                        <div class="mb-6 p-4 border border-gray-700 rounded-lg">
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <!-- Left Column -->
+                    <div class="lg:col-span-1 space-y-6">
+                        <div class="p-4 border border-gray-700 rounded-lg">
                             <h3 class="font-semibold text-white mb-3">🛡️ Rank Abuse Protection</h3>
                             <div class="space-y-4">
-                                <div>
-                                    <label for="abuse-threshold" class="block text-sm font-medium text-gray-300">Abuse Threshold</label>
-                                    <input type="number" id="abuse-threshold" class="mt-1 block w-full bg-[#0f0f1b] border border-gray-600 rounded-md py-2 px-3 text-white">
-                                </div>
-                                <div>
-                                    <label for="punish-role" class="block text-sm font-medium text-gray-300">Punish Role ID</label>
-                                    <input type="number" id="punish-role" class="mt-1 block w-full bg-[#0f0f1b] border border-gray-600 rounded-md py-2 px-3 text-white">
-                                </div>
+                                <div><label for="abuse-threshold" class="block text-sm font-medium">Abuse Threshold</label><input type="number" id="abuse-threshold" class="mt-1 block w-full bg-[#0f0f1b] border border-gray-600 rounded-md py-2 px-3 text-white"></div>
+                                <div><label for="punish-role" class="block text-sm font-medium">Punish Role ID</label><input type="number" id="punish-role" class="mt-1 block w-full bg-[#0f0f1b] border border-gray-600 rounded-md py-2 px-3 text-white"></div>
                             </div>
                         </div>
-                        <div id="exile-guard-section" class="mb-6 p-4 border border-gray-700 rounded-lg">
-                            <div class="flex items-center justify-between">
-                                <h3 class="font-semibold text-white">⚔️ Exile Guard <span class="text-xs text-purple-400"></span></h3>
-                                <label class="relative inline-flex items-center cursor-pointer"><input type="checkbox" id="exile-guard-enabled" class="sr-only peer"><div class="w-11 h-6 bg-gray-600 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div></label>
-                            </div>
-                            <div class="mt-3">
-                                <label for="exile-threshold" class="block text-sm font-medium text-gray-300">Exile Threshold</label>
-                                <input type="number" id="exile-threshold" class="mt-1 block w-full bg-[#0f0f1b] border border-gray-600 rounded-md py-2 px-3 text-white">
+                        <div id="exile-guard-section" class="p-4 border border-gray-700 rounded-lg">
+                            <div class="flex items-center justify-between"><h3 class="font-semibold text-white">⚔️ Exile Guard <span class="text-xs text-purple-400"></span></h3><label class="relative inline-flex items-center cursor-pointer"><input type="checkbox" id="exile-guard-enabled" class="sr-only peer"><div class="w-11 h-6 bg-gray-600 rounded-full peer-checked:after:translate-x-full after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div></label></div>
+                            <div class="mt-3"><label for="exile-threshold" class="block text-sm font-medium">Exile Threshold</label><input type="number" id="exile-threshold" class="mt-1 block w-full bg-[#0f0f1b] border border-gray-600 rounded-md py-2 px-3 text-white"></div>
+                        </div>
+                    </div>
+                    <!-- Middle Column -->
+                    <div class="lg:col-span-1 space-y-6">
+                        <div id="wall-mod-section" class="p-4 border border-gray-700 rounded-lg">
+                             <div class="flex items-center justify-between"><h3 class="font-semibold text-white">🗑️ Wall Moderation <span class="text-xs text-purple-400"></span></h3><label class="relative inline-flex items-center cursor-pointer"><input type="checkbox" id="wall-mod-enabled" class="sr-only peer"><div class="w-11 h-6 bg-gray-600 rounded-full peer-checked:after:translate-x-full after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div></label></div>
+                            <div class="mt-3 space-y-4">
+                                <div><label for="wall-action" class="block text-sm font-medium">Action</label><select id="wall-action" class="mt-1 block w-full bg-[#0f0f1b] border border-gray-600 rounded-md py-2 px-3 text-white"><option value="Delete">Delete Post</option><option value="DeleteAndExile">Delete & Exile</option></select></div>
+                                <div><label for="banned-words" class="block text-sm font-medium">Banned Words (comma-separated)</label><textarea id="banned-words" rows="4" class="mt-1 block w-full bg-[#0f0f1b] border border-gray-600 rounded-md py-2 px-3 text-white"></textarea></div>
                             </div>
                         </div>
                     </div>
-                    <div>
-                        <div id="wall-mod-section" class="mb-6 p-4 border border-gray-700 rounded-lg">
-                             <div class="flex items-center justify-between">
-                                <h3 class="font-semibold text-white">🗑️ Wall Moderation <span class="text-xs text-purple-400"></span></h3>
-                                <label class="relative inline-flex items-center cursor-pointer"><input type="checkbox" id="wall-mod-enabled" class="sr-only peer"><div class="w-11 h-6 bg-gray-600 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div></label>
-                            </div>
-                            <div class="mt-3 space-y-4">
-                                <div>
-                                    <label for="wall-action" class="block text-sm font-medium text-gray-300">Action</label>
-                                    <select id="wall-action" class="mt-1 block w-full bg-[#0f0f1b] border border-gray-600 rounded-md py-2 px-3 text-white"><option value="Delete">Delete Post</option><option value="DeleteAndExile">Delete & Exile</option></select>
-                                </div>
-                                <div>
-                                    <label for="banned-words" class="block text-sm font-medium text-gray-300">Banned Words (comma-separated)</label>
-                                    <textarea id="banned-words" rows="3" class="mt-1 block w-full bg-[#0f0f1b] border border-gray-600 rounded-md py-2 px-3 text-white"></textarea>
-                                </div>
-                            </div>
+                    <!-- Right Column -->
+                    <div class="lg:col-span-1 space-y-6">
+                         <div id="blacklist-section" class="p-4 border border-gray-700 rounded-lg">
+                            <h3 class="font-semibold text-white mb-3">🚫 Group Blacklist <span class="text-xs text-purple-400"></span></h3>
+                            <div class="space-y-2"><p class="text-sm text-gray-400">Manage via Discord commands: `/blacklist add` and `/blacklist remove`</p></div>
+                        </div>
+                         <div class="p-4 border border-gray-700 rounded-lg">
+                            <h3 class="font-semibold text-white mb-3">🔑 Admin Whitelist</h3>
+                             <div class="space-y-2"><p class="text-sm text-gray-400">Manage via Discord commands: `/group whitelist add` and `/group whitelist remove`</p></div>
                         </div>
                     </div>
                 </div>
