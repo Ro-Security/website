@@ -139,6 +139,11 @@
                     if (!response.ok) throw new Error('Failed to fetch user info');
                     const user = await response.json();
                     usernameSpan.textContent = user.username;
+                    if (user.avatar) {
+                        avatarImg.src = `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png`;
+                    } else {
+                        avatarImg.src = `https://cdn.discordapp.com/embed/avatars/${parseInt(user.id) % 5}.png`;
+                    }
                     userSubscription = user.subscription;
                     showDashboardState();
                     loadGroups();
