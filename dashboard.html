@@ -18,12 +18,12 @@
         input:checked + .toggle-bg:after { transform: translateX(100%); }
         input:checked + .toggle-bg { background-color: #4F46E5; }
         .premium-feature { opacity: 0.5; cursor: not-allowed; }
-        .premium-feature input, .premium-feature select, .premium-feature textarea { pointer-events: none; }
+        .premium-feature input, .premium-feature select, .premium-feature textarea, .premium-feature button { pointer-events: none; }
     </style>
 </head>
 <body class="bg-[#0f0f1b] text-gray-300">
 
-    <!-- Header and Main Content (Unchanged) -->
+    <!-- Header -->
     <header class="container mx-auto px-6 py-4 flex justify-between items-center border-b border-gray-800">
         <div class="flex items-center space-x-3">
             <img src="https://cdn.discordapp.com/attachments/1408873785171513355/1409613249313505401/raw-removebg-preview.png?ex=68ae0423&is=68acb2a3&hm=874d42baf21d2841d2364a3c520a868179e47ded2f4f959563677a1f0b143557&" alt="Ro-Security Logo" class="h-10 w-10">
@@ -39,12 +39,13 @@
         </div>
     </header>
 
+    <!-- Main Dashboard Content -->
     <main id="dashboard-content" class="container mx-auto px-6 py-12 hidden">
         <h1 class="text-3xl font-bold text-white">Your Monitored Groups</h1>
         <div id="group-list" class="mt-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
     </main>
 
-     <!-- Settings Modal -->
+    <!-- Settings Modal -->
     <div id="settings-modal" class="fixed inset-0 modal-bg items-center justify-center hidden">
         <div class="card rounded-lg w-full max-w-4xl p-8 m-4 max-h-[90vh] overflow-y-auto">
             <div class="flex justify-between items-center mb-6">
@@ -142,7 +143,7 @@
                     if (user.avatar) {
                         avatarImg.src = `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png`;
                     } else {
-                        avatarImg.src = `https://cdn.discordapp.com/embed/avatars/${parseInt(user.id) % 5}.png`;
+                        avatarImg.src = `https://cdn.discordapp.com/embed/avatars/${(user.id >> 22) % 6}.png`;
                     }
                     userSubscription = user.subscription;
                     showDashboardState();
@@ -223,27 +224,26 @@
                     if (!response.ok) throw new Error('Failed to fetch settings');
                     const settings = await response.json();
 
-                    modalGroupName.textContent = `ID: ${groupId}`;
+                    modalGroupName.textContent = settings.core.name || `ID: ${groupId}`;
                     modalGroupIdInput.value = groupId;
                     
                     document.getElementById('abuse-threshold').value = settings.core.abuse_threshold;
                     document.getElementById('punish-role').value = settings.core.punish_role_id;
                     
                     const isPremium = userSubscription && userSubscription.tier === 'Premium';
-                    const exileSection = document.getElementById('exile-guard-section');
-                    const wallSection = document.getElementById('wall-mod-section');
+                    const premiumSections = ['exile-guard-section', 'wall-mod-section', 'blacklist-section'];
 
-                    if (isPremium) {
-                        exileSection.classList.remove('premium-feature');
-                        wallSection.classList.remove('premium-feature');
-                        exileSection.querySelector('span').textContent = 'Premium';
-                        wallSection.querySelector('span').textContent = 'Premium';
-                    } else {
-                        exileSection.classList.add('premium-feature');
-                        wallSection.classList.add('premium-feature');
-                        exileSection.querySelector('span').textContent = 'Premium';
-                        wallSection.querySelector('span').textContent = 'Premium';
-                    }
+                    premiumSections.forEach(id => {
+                        const section = document.getElementById(id);
+                        const label = section.querySelector('span');
+                        if (isPremium) {
+                            section.classList.remove('premium-feature');
+                            if(label) label.textContent = 'Premium';
+                        } else {
+                            section.classList.add('premium-feature');
+                            if(label) label.textContent = 'Premium';
+                        }
+                    });
 
                     document.getElementById('exile-guard-enabled').checked = settings.exile_guard.is_enabled;
                     document.getElementById('exile-threshold').value = settings.exile_guard.abuse_threshold;
