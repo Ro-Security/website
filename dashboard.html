@@ -14,6 +14,9 @@
         .card { background-color: #1a1a2e; border: 1px solid #2a2a4a; }
         .btn { transition: background-color 0.3s ease; }
         .modal-bg { background-color: rgba(0, 0, 0, 0.7); display: flex; }
+        .toggle-bg:after { content: ''; position: absolute; top: 2px; left: 2px; background: white; border-radius: 9999px; height: 1.25rem; width: 1.25rem; transition: transform 0.2s ease-in-out; }
+        input:checked + .toggle-bg:after { transform: translateX(100%); }
+        input:checked + .toggle-bg { background-color: #4F46E5; }
     </style>
 </head>
 <body class="bg-[#0f0f1b] text-gray-300">
@@ -44,7 +47,7 @@
 
     <!-- Settings Modal (Initially Hidden) -->
     <div id="settings-modal" class="fixed inset-0 modal-bg items-center justify-center hidden">
-        <div class="card rounded-lg w-full max-w-2xl p-8 m-4 max-h-[90vh] overflow-y-auto">
+        <div class="card rounded-lg w-full max-w-3xl p-8 m-4 max-h-[90vh] overflow-y-auto">
             <div class="flex justify-between items-center mb-6">
                 <h2 class="text-2xl font-bold text-white">Manage Settings for <span id="modal-group-name" class="gradient-text"></span></h2>
                 <button id="modal-close-button" class="text-gray-400 hover:text-white text-3xl">&times;</button>
@@ -52,21 +55,68 @@
             
             <form id="settings-form">
                 <input type="hidden" id="modal-group-id">
-                <!-- Rank Abuse Settings -->
-                <div class="mb-6 p-4 border border-gray-700 rounded-lg">
-                    <h3 class="font-semibold text-white mb-2">🛡️ Rank Abuse Protection</h3>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                            <label for="abuse-threshold" class="block text-sm font-medium text-gray-300">Abuse Threshold</label>
-                            <input type="number" id="abuse-threshold" class="mt-1 block w-full bg-[#0f0f1b] border border-gray-600 rounded-md py-2 px-3 text-white">
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Left Column -->
+                    <div>
+                        <!-- Rank Abuse Settings -->
+                        <div class="mb-6 p-4 border border-gray-700 rounded-lg">
+                            <h3 class="font-semibold text-white mb-3">🛡️ Rank Abuse Protection</h3>
+                            <div class="space-y-4">
+                                <div>
+                                    <label for="abuse-threshold" class="block text-sm font-medium text-gray-300">Abuse Threshold</label>
+                                    <input type="number" id="abuse-threshold" class="mt-1 block w-full bg-[#0f0f1b] border border-gray-600 rounded-md py-2 px-3 text-white">
+                                </div>
+                                <div>
+                                    <label for="punish-role" class="block text-sm font-medium text-gray-300">Punish Role ID</label>
+                                    <input type="number" id="punish-role" class="mt-1 block w-full bg-[#0f0f1b] border border-gray-600 rounded-md py-2 px-3 text-white">
+                                </div>
+                            </div>
                         </div>
-                        <div>
-                            <label for="punish-role" class="block text-sm font-medium text-gray-300">Punish Role ID</label>
-                            <input type="number" id="punish-role" class="mt-1 block w-full bg-[#0f0f1b] border border-gray-600 rounded-md py-2 px-3 text-white">
+
+                        <!-- Exile Guard Settings -->
+                        <div class="mb-6 p-4 border border-gray-700 rounded-lg">
+                            <div class="flex items-center justify-between">
+                                <h3 class="font-semibold text-white">⚔️ Exile Guard</h3>
+                                <label class="relative inline-flex items-center cursor-pointer">
+                                    <input type="checkbox" id="exile-guard-enabled" class="sr-only peer">
+                                    <div class="w-11 h-6 bg-gray-600 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
+                                </label>
+                            </div>
+                            <div class="mt-3">
+                                <label for="exile-threshold" class="block text-sm font-medium text-gray-300">Exile Threshold</label>
+                                <input type="number" id="exile-threshold" class="mt-1 block w-full bg-[#0f0f1b] border border-gray-600 rounded-md py-2 px-3 text-white">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Right Column -->
+                    <div>
+                        <!-- Wall Moderation Settings -->
+                        <div class="mb-6 p-4 border border-gray-700 rounded-lg">
+                             <div class="flex items-center justify-between">
+                                <h3 class="font-semibold text-white">🗑️ Wall Moderation</h3>
+                                <label class="relative inline-flex items-center cursor-pointer">
+                                    <input type="checkbox" id="wall-mod-enabled" class="sr-only peer">
+                                    <div class="w-11 h-6 bg-gray-600 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
+                                </label>
+                            </div>
+                            <div class="mt-3 space-y-4">
+                                <div>
+                                    <label for="wall-action" class="block text-sm font-medium text-gray-300">Action</label>
+                                    <select id="wall-action" class="mt-1 block w-full bg-[#0f0f1b] border border-gray-600 rounded-md py-2 px-3 text-white">
+                                        <option value="Delete">Delete Post</option>
+                                        <option value="DeleteAndExile">Delete & Exile</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label for="banned-words" class="block text-sm font-medium text-gray-300">Banned Words (comma-separated)</label>
+                                    <textarea id="banned-words" rows="3" class="mt-1 block w-full bg-[#0f0f1b] border border-gray-600 rounded-md py-2 px-3 text-white"></textarea>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
-                <!-- More settings will be added here in a full implementation -->
 
                 <div class="mt-8 flex justify-end space-x-4">
                     <button type="button" id="modal-cancel-button" class="bg-gray-600 hover:bg-gray-700 text-white font-semibold py-2 px-4 rounded-lg btn">Cancel</button>
@@ -78,7 +128,7 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            const API_BASE_URL = 'https://rosecurity.fly.dev'; // Your live backend URL
+            const API_BASE_URL = 'https://rosecurity.fly.dev';
             
             const userInfoDiv = document.getElementById('user-info');
             const loginContainer = document.getElementById('login-container');
@@ -100,7 +150,6 @@
             function checkAuth() {
                 const fragment = new URLSearchParams(window.location.hash.slice(1));
                 const token = fragment.get('token') || localStorage.getItem('ro-security-token');
-
                 if (token) {
                     userToken = token;
                     localStorage.setItem('ro-security-token', token);
@@ -113,11 +162,8 @@
 
             async function fetchUserInfo() {
                 try {
-                    const response = await fetch(`${API_BASE_URL}/api/user`, {
-                        headers: { 'Authorization': `Bearer ${userToken}` }
-                    });
+                    const response = await fetch(`${API_BASE_URL}/api/user`, { headers: { 'Authorization': `Bearer ${userToken}` } });
                     if (!response.ok) throw new Error('Failed to fetch user info');
-                    
                     const user = await response.json();
                     usernameSpan.textContent = user.username;
                     showDashboardState();
@@ -149,35 +195,29 @@
             async function loadGroups() {
                 groupListDiv.innerHTML = '<p>Loading your groups...</p>';
                 try {
-                    const response = await fetch(`${API_BASE_URL}/api/groups`, {
-                        headers: { 'Authorization': `Bearer ${userToken}` }
-                    });
+                    const response = await fetch(`${API_BASE_URL}/api/groups`, { headers: { 'Authorization': `Bearer ${userToken}` } });
                     if (!response.ok) throw new Error('Failed to fetch groups');
-
                     const groups = await response.json();
                     renderGroups(groups);
                 } catch (error) {
                     console.error(error);
-                    groupListDiv.innerHTML = `<p class="text-red-400">Error loading groups. Please ensure the backend is running and reachable.</p>`;
+                    groupListDiv.innerHTML = `<p class="text-red-400">Error loading groups.</p>`;
                 }
             }
 
             function renderGroups(groups) {
                 groupListDiv.innerHTML = '';
-                
-                if (groups.length === 0) {
-                     groupListDiv.innerHTML = '<p>You are not monitoring any groups yet.</p>';
-                } else {
+                if (groups.length > 0) {
                     groups.forEach(group => {
                         const card = document.createElement('div');
                         card.className = 'card p-6 rounded-lg flex flex-col justify-between';
                         card.innerHTML = `
                             <div>
                                 <div class="flex items-center justify-between">
-                                    <h2 class="text-xl font-bold text-white">Group ID: ${group.group_id}</h2>
+                                    <h2 class="text-xl font-bold text-white">${group.name || `Group ID: ${group.group_id}`}</h2>
                                     <span class="text-xs font-semibold bg-green-500/20 text-green-400 px-2 py-1 rounded-full">Active</span>
                                 </div>
-                                <p class="text-sm text-gray-400 mt-1">Owner ID: ${group.owner_user_id}</p>
+                                <p class="text-sm text-gray-400 mt-1">ID: ${group.group_id}</p>
                             </div>
                             <div class="mt-6">
                                 <button class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-4 rounded-lg btn manage-btn" data-group-id="${group.group_id}">Manage Settings</button>
@@ -193,30 +233,32 @@
 
                 const addCard = document.createElement('div');
                 addCard.className = 'card p-6 rounded-lg border-2 border-dashed border-gray-600 hover:border-indigo-500 transition-colors flex items-center justify-center cursor-pointer';
-                addCard.innerHTML = `
-                    <div class="text-center">
-                        <svg class="w-12 h-12 mx-auto text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg>
-                        <p class="mt-2 font-semibold text-white">Add New Group</p>
-                    </div>
-                `;
-                addCard.addEventListener('click', () => {
-                    alert('To add a new group, please use the /group add command in our Discord server.');
-                });
+                addCard.innerHTML = `<div class="text-center"><svg class="w-12 h-12 mx-auto text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg><p class="mt-2 font-semibold text-white">Add New Group</p></div>`;
+                addCard.addEventListener('click', () => alert('To add a new group, please use the /group add command in our Discord server.'));
                 groupListDiv.appendChild(addCard);
             }
 
             async function openSettingsModal(groupId) {
                 try {
-                    const response = await fetch(`${API_BASE_URL}/api/group/${groupId}/settings`, {
-                        headers: { 'Authorization': `Bearer ${userToken}` }
-                    });
+                    const response = await fetch(`${API_BASE_URL}/api/group/${groupId}/settings`, { headers: { 'Authorization': `Bearer ${userToken}` } });
                     if (!response.ok) throw new Error('Failed to fetch settings');
                     const settings = await response.json();
 
                     modalGroupName.textContent = `ID: ${groupId}`;
                     modalGroupIdInput.value = groupId;
+                    
+                    // Populate Core Settings
                     document.getElementById('abuse-threshold').value = settings.core.abuse_threshold;
                     document.getElementById('punish-role').value = settings.core.punish_role_id;
+
+                    // Populate Exile Guard
+                    document.getElementById('exile-guard-enabled').checked = settings.exile_guard.is_enabled;
+                    document.getElementById('exile-threshold').value = settings.exile_guard.abuse_threshold;
+
+                    // Populate Wall Mod
+                    document.getElementById('wall-mod-enabled').checked = settings.wall_mod.is_enabled;
+                    document.getElementById('wall-action').value = settings.wall_mod.action;
+                    document.getElementById('banned-words').value = settings.wall_mod.banned_words;
                     
                     settingsModal.classList.remove('hidden');
                 } catch (error) {
@@ -236,15 +278,21 @@
                 const updatedSettings = {
                     abuse_threshold: parseInt(document.getElementById('abuse-threshold').value),
                     punish_role_id: parseInt(document.getElementById('punish-role').value),
+                    exile_guard: {
+                        is_enabled: document.getElementById('exile-guard-enabled').checked,
+                        abuse_threshold: parseInt(document.getElementById('exile-threshold').value)
+                    },
+                    wall_mod: {
+                        is_enabled: document.getElementById('wall-mod-enabled').checked,
+                        action: document.getElementById('wall-action').value,
+                        banned_words: document.getElementById('banned-words').value
+                    }
                 };
 
                 try {
                     const response = await fetch(`${API_BASE_URL}/api/group/${groupId}/settings`, {
                         method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'Authorization': `Bearer ${userToken}`
-                        },
+                        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${userToken}` },
                         body: JSON.stringify(updatedSettings)
                     });
 
@@ -259,10 +307,7 @@
                 }
             }
 
-            loginButton.addEventListener('click', () => {
-                window.location.href = `${API_BASE_URL}/login`;
-            });
-
+            loginButton.addEventListener('click', () => { window.location.href = `${API_BASE_URL}/login`; });
             logoutButton.addEventListener('click', logout);
             modalCloseButton.addEventListener('click', closeSettingsModal);
             modalCancelButton.addEventListener('click', closeSettingsModal);
