@@ -44,7 +44,7 @@
         <div id="group-list" class="mt-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
     </main>
 
-    <!-- Settings Modal (Unchanged) -->
+    <!-- Settings Modal (Updated with Premium sections) -->
     <div id="settings-modal" class="fixed inset-0 modal-bg items-center justify-center hidden">
         <div class="card rounded-lg w-full max-w-3xl p-8 m-4 max-h-[90vh] overflow-y-auto">
             <div class="flex justify-between items-center mb-6">
@@ -108,7 +108,6 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            // --- FIX: This MUST be your live backend server's public URL ---
             const API_BASE_URL = 'https://rosecurity.fly.dev'; 
             
             const userInfoDiv = document.getElementById('user-info');
@@ -127,6 +126,7 @@
             const modalCancelButton = document.getElementById('modal-cancel-button');
 
             let userToken = null;
+            let userSubscription = null;
 
             function checkAuth() {
                 const fragment = new URLSearchParams(window.location.hash.slice(1));
@@ -231,6 +231,23 @@
                     
                     document.getElementById('abuse-threshold').value = settings.core.abuse_threshold;
                     document.getElementById('punish-role').value = settings.core.punish_role_id;
+                    
+                    const isPremium = userSubscription && userSubscription.tier === 'Premium';
+                    const exileSection = document.getElementById('exile-guard-section');
+                    const wallSection = document.getElementById('wall-mod-section');
+
+                    if (isPremium) {
+                        exileSection.classList.remove('premium-feature');
+                        wallSection.classList.remove('premium-feature');
+                        exileSection.querySelector('span').textContent = '💎';
+                        wallSection.querySelector('span').textContent = '💎';
+                    } else {
+                        exileSection.classList.add('premium-feature');
+                        wallSection.classList.add('premium-feature');
+                        exileSection.querySelector('span').textContent = 'Premium';
+                        wallSection.querySelector('span').textContent = 'Premium';
+                    }
+
                     document.getElementById('exile-guard-enabled').checked = settings.exile_guard.is_enabled;
                     document.getElementById('exile-threshold').value = settings.exile_guard.abuse_threshold;
                     document.getElementById('wall-mod-enabled').checked = settings.wall_mod.is_enabled;
@@ -277,9 +294,9 @@
                         body: JSON.stringify(updatedSettings)
                     });
 
-                    const errorData = await response.json();
+                    const result = await response.json();
                     if (!response.ok) {
-                        throw new Error(errorData.error || 'Failed to save settings');
+                        throw new Error(result.error || 'Failed to save settings');
                     }
                     
                     alert(result.message);
