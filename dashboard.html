@@ -44,16 +44,32 @@
 
     <!-- Settings Modal (Initially Hidden) -->
     <div id="settings-modal" class="fixed inset-0 modal-bg items-center justify-center hidden">
-        <div class="card rounded-lg w-full max-w-2xl p-8 m-4">
-            <h2 class="text-2xl font-bold text-white mb-6">Manage Settings for <span id="modal-group-name" class="gradient-text"></span></h2>
+        <div class="card rounded-lg w-full max-w-2xl p-8 m-4 max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-2xl font-bold text-white">Manage Settings for <span id="modal-group-name" class="gradient-text"></span></h2>
+                <button id="modal-close-button" class="text-gray-400 hover:text-white text-3xl">&times;</button>
+            </div>
             
             <form id="settings-form">
-                <div class="mb-4">
-                    <label for="abuse-threshold" class="block text-sm font-medium text-gray-300">Rank Abuse Threshold</label>
-                    <input type="number" id="abuse-threshold" class="mt-1 block w-full bg-[#0f0f1b] border border-gray-600 rounded-md shadow-sm py-2 px-3 text-white focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
+                <input type="hidden" id="modal-group-id">
+                <!-- Rank Abuse Settings -->
+                <div class="mb-6 p-4 border border-gray-700 rounded-lg">
+                    <h3 class="font-semibold text-white mb-2">🛡️ Rank Abuse Protection</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label for="abuse-threshold" class="block text-sm font-medium text-gray-300">Abuse Threshold</label>
+                            <input type="number" id="abuse-threshold" class="mt-1 block w-full bg-[#0f0f1b] border border-gray-600 rounded-md py-2 px-3 text-white">
+                        </div>
+                        <div>
+                            <label for="punish-role" class="block text-sm font-medium text-gray-300">Punish Role ID</label>
+                            <input type="number" id="punish-role" class="mt-1 block w-full bg-[#0f0f1b] border border-gray-600 rounded-md py-2 px-3 text-white">
+                        </div>
+                    </div>
                 </div>
+                <!-- More settings will be added here in a full implementation -->
+
                 <div class="mt-8 flex justify-end space-x-4">
-                    <button type="button" id="modal-close-button" class="bg-gray-600 hover:bg-gray-700 text-white font-semibold py-2 px-4 rounded-lg btn">Cancel</button>
+                    <button type="button" id="modal-cancel-button" class="bg-gray-600 hover:bg-gray-700 text-white font-semibold py-2 px-4 rounded-lg btn">Cancel</button>
                     <button type="submit" class="bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-4 rounded-lg btn">Save Changes</button>
                 </div>
             </form>
@@ -62,7 +78,7 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            const API_BASE_URL = 'https://rosecurity.fly.dev'; // This MUST be your backend server's public URL in production
+            const API_BASE_URL = 'https://rosecurity.fly.dev'; // Your live backend URL
             
             const userInfoDiv = document.getElementById('user-info');
             const loginContainer = document.getElementById('login-container');
@@ -72,10 +88,15 @@
             const loginButton = document.getElementById('login-button');
             const logoutButton = document.getElementById('logout-button');
             const groupListDiv = document.getElementById('group-list');
+            const settingsModal = document.getElementById('settings-modal');
+            const modalGroupName = document.getElementById('modal-group-name');
+            const modalGroupIdInput = document.getElementById('modal-group-id');
+            const settingsForm = document.getElementById('settings-form');
+            const modalCloseButton = document.getElementById('modal-close-button');
+            const modalCancelButton = document.getElementById('modal-cancel-button');
 
             let userToken = null;
 
-            // --- 1. Authentication ---
             function checkAuth() {
                 const fragment = new URLSearchParams(window.location.hash.slice(1));
                 const token = fragment.get('token') || localStorage.getItem('ro-security-token');
@@ -83,7 +104,7 @@
                 if (token) {
                     userToken = token;
                     localStorage.setItem('ro-security-token', token);
-                    window.location.hash = ''; // Clean the URL
+                    window.location.hash = '';
                     fetchUserInfo();
                 } else {
                     showLoginState();
@@ -98,11 +119,7 @@
                     if (!response.ok) throw new Error('Failed to fetch user info');
                     
                     const user = await response.json();
-                    // In a real app, you'd get the full user object from Discord
-                    // For this example, we'll just use the ID and a placeholder name
                     usernameSpan.textContent = user.username;
-                    // You would fetch the avatar from the full user object
-                    // avatarImg.src = `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png`;
                     showDashboardState();
                     loadGroups();
                 } catch (error) {
@@ -129,7 +146,6 @@
                 dashboardContent.classList.remove('hidden');
             }
 
-            // --- 2. Data Loading ---
             async function loadGroups() {
                 groupListDiv.innerHTML = '<p>Loading your groups...</p>';
                 try {
@@ -147,7 +163,7 @@
             }
 
             function renderGroups(groups) {
-                groupListDiv.innerHTML = ''; // Clear existing
+                groupListDiv.innerHTML = '';
                 
                 if (groups.length === 0) {
                      groupListDiv.innerHTML = '<p>You are not monitoring any groups yet.</p>';
@@ -155,7 +171,6 @@
                     groups.forEach(group => {
                         const card = document.createElement('div');
                         card.className = 'card p-6 rounded-lg flex flex-col justify-between';
-                        // The group name is a placeholder as the simplified backend doesn't fetch it
                         card.innerHTML = `
                             <div>
                                 <div class="flex items-center justify-between">
@@ -165,14 +180,17 @@
                                 <p class="text-sm text-gray-400 mt-1">Owner ID: ${group.owner_user_id}</p>
                             </div>
                             <div class="mt-6">
-                                <button class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-4 rounded-lg btn" data-group-id="${group.group_id}">Manage Settings</button>
+                                <button class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-4 rounded-lg btn manage-btn" data-group-id="${group.group_id}">Manage Settings</button>
                             </div>
                         `;
                         groupListDiv.appendChild(card);
                     });
                 }
+                
+                groupListDiv.querySelectorAll('.manage-btn').forEach(button => {
+                    button.addEventListener('click', () => openSettingsModal(button.dataset.groupId));
+                });
 
-                // Add the "Add New Group" card
                 const addCard = document.createElement('div');
                 addCard.className = 'card p-6 rounded-lg border-2 border-dashed border-gray-600 hover:border-indigo-500 transition-colors flex items-center justify-center cursor-pointer';
                 addCard.innerHTML = `
@@ -182,20 +200,74 @@
                     </div>
                 `;
                 addCard.addEventListener('click', () => {
-                    // In a real app, this would open a modal to add a new group
-                    alert('This would open a form to add a new group.');
+                    alert('To add a new group, please use the /group add command in our Discord server.');
                 });
                 groupListDiv.appendChild(addCard);
             }
 
-            // --- 3. Event Listeners ---
+            async function openSettingsModal(groupId) {
+                try {
+                    const response = await fetch(`${API_BASE_URL}/api/group/${groupId}/settings`, {
+                        headers: { 'Authorization': `Bearer ${userToken}` }
+                    });
+                    if (!response.ok) throw new Error('Failed to fetch settings');
+                    const settings = await response.json();
+
+                    modalGroupName.textContent = `ID: ${groupId}`;
+                    modalGroupIdInput.value = groupId;
+                    document.getElementById('abuse-threshold').value = settings.core.abuse_threshold;
+                    document.getElementById('punish-role').value = settings.core.punish_role_id;
+                    
+                    settingsModal.classList.remove('hidden');
+                } catch (error) {
+                    console.error(error);
+                    alert('Error: Could not load group settings.');
+                }
+            }
+
+            function closeSettingsModal() {
+                settingsModal.classList.add('hidden');
+            }
+
+            async function handleFormSubmit(event) {
+                event.preventDefault();
+                const groupId = modalGroupIdInput.value;
+                
+                const updatedSettings = {
+                    abuse_threshold: parseInt(document.getElementById('abuse-threshold').value),
+                    punish_role_id: parseInt(document.getElementById('punish-role').value),
+                };
+
+                try {
+                    const response = await fetch(`${API_BASE_URL}/api/group/${groupId}/settings`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${userToken}`
+                        },
+                        body: JSON.stringify(updatedSettings)
+                    });
+
+                    if (!response.ok) throw new Error('Failed to save settings');
+                    
+                    const result = await response.json();
+                    alert(result.message);
+                    closeSettingsModal();
+                } catch (error) {
+                    console.error(error);
+                    alert('Error: Could not save settings.');
+                }
+            }
+
             loginButton.addEventListener('click', () => {
                 window.location.href = `${API_BASE_URL}/login`;
             });
 
             logoutButton.addEventListener('click', logout);
+            modalCloseButton.addEventListener('click', closeSettingsModal);
+            modalCancelButton.addEventListener('click', closeSettingsModal);
+            settingsForm.addEventListener('submit', handleFormSubmit);
 
-            // --- Initial Load ---
             checkAuth();
         });
     </script>
