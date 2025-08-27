@@ -51,7 +51,7 @@
         <div id="group-list" class="mt-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
     </main>
 
-    <!-- NEW: No License Message -->
+    <!-- No License Message -->
     <div id="no-license-message" class="container mx-auto px-6 py-24 text-center hidden">
         <h2 class="text-3xl font-bold text-red-500">Access Denied</h2>
         <p class="mt-4 text-gray-400 max-w-lg mx-auto">You do not have an active subscription. Please contact the service owner to purchase a license, or use `/mylicense` in our Discord server to check your status.</p>
@@ -131,8 +131,7 @@
     </div>
 
     <script>
-        // --- FIX: Wrap all logic in a main function to ensure proper loading order ---
-        document.addEventListener('DOMContentLoaded', () => {
+        function initializeDashboard() {
             const API_BASE_URL = 'https://rosecurity.fly.dev'; 
             
             const userInfoDiv = document.getElementById('user-info');
@@ -142,6 +141,7 @@
             const usernameSpan = document.getElementById('username');
             const avatarImg = document.getElementById('avatar');
             const licenseStatusSpan = document.getElementById('license-status');
+            const groupLimitStatusSpan = document.getElementById('group-limit-status');
             const loginButton = document.getElementById('login-button');
             const logoutButton = document.getElementById('logout-button');
             const groupListDiv = document.getElementById('group-list');
@@ -180,11 +180,8 @@
                     usernameSpan.textContent = user.username;
                     if (user.avatar_url) {
                         avatarImg.src = user.avatar_url;
-                    } else {
-                        avatarImg.src = `https://cdn.discordapp.com/embed/avatars/${(BigInt(user.id) >> 22n) % 6n}.png`;
                     }
                     userSubscription = user.subscription;
-                    // --- FIX: Check for subscription before showing dashboard ---
                     if (userSubscription) {
                         licenseStatusSpan.textContent = `${userSubscription.tier} License`;
                         showDashboardState();
@@ -207,11 +204,13 @@
             function showLoginState() {
                 userInfoDiv.classList.add('hidden');
                 dashboardContent.classList.add('hidden');
+                noLicenseMessage.classList.add('hidden');
                 loginContainer.classList.remove('hidden');
             }
 
             function showDashboardState() {
                 loginContainer.classList.add('hidden');
+                noLicenseMessage.classList.add('hidden');
                 userInfoDiv.classList.remove('hidden');
                 dashboardContent.classList.remove('hidden');
             }
@@ -219,7 +218,7 @@
             function showNoLicenseState() {
                 loginContainer.classList.add('hidden');
                 dashboardContent.classList.add('hidden');
-                userInfoDiv.classList.remove('hidden'); // Still show user info
+                userInfoDiv.classList.remove('hidden');
                 noLicenseMessage.classList.remove('hidden');
             }
 
@@ -271,7 +270,7 @@
                 addCard.innerHTML = `<div class="text-center"><svg class="w-12 h-12 mx-auto text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg><p class="mt-2 font-semibold text-white">Add New Group</p></div>`;
                 
                 if (currentCount >= limit) {
-                    addCard.classList.add('premium-feature'); // Re-use disabled style
+                    addCard.classList.add('premium-feature');
                     addCard.querySelector('p').textContent = 'Group Limit Reached';
                 } else {
                     addCard.addEventListener('click', () => {
@@ -280,20 +279,7 @@
                 }
                 groupListDiv.appendChild(addCard);
             }
-                
-                groupListDiv.querySelectorAll('.manage-btn').forEach(button => {
-                    button.addEventListener('click', () => openSettingsModal(button.dataset.groupId));
-                });
-
-                const addCard = document.createElement('div');
-                addCard.className = 'card p-6 rounded-lg border-2 border-dashed border-gray-600 hover:border-indigo-500 transition-colors flex items-center justify-center cursor-pointer';
-                addCard.innerHTML = `<div class="text-center"><svg class="w-12 h-12 mx-auto text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg><p class="mt-2 font-semibold text-white">Add New Group</p></div>`;
-                addCard.addEventListener('click', () => {
-                    addGroupModal.classList.remove('hidden');
-                });
-                groupListDiv.appendChild(addCard);
-            }
-
+            
             async function openSettingsModal(groupId) {
                 try {
                     const response = await fetch(`${API_BASE_URL}/api/group/${groupId}/settings`, { headers: { 'Authorization': `Bearer ${userToken}` } });
@@ -434,12 +420,8 @@
             addModalCancelButton.addEventListener('click', closeAddGroupModal);
             addGroupForm.addEventListener('submit', handleAddGroupSubmit);
 
-            // Initial call to start the authentication process
             checkAuth();
-        }
-
-        // --- FIX: Call the main function after the DOM is fully loaded ---
-        document.addEventListener('DOMContentLoaded', main);
+        };
     </script>
 
 </body>
