@@ -165,7 +165,7 @@
                     const user = await response.json();
                     usernameSpan.textContent = user.username;
                     if (user.avatar) {
-                        avatarImg.src = `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png`;
+                        avatarImg.src = `avatar`;
                     } else {
                         avatarImg.src = `https://cdn.discordapp.com/embed/avatars/${(BigInt(user.id) >> 22n) % 6n}.png`;
                     }
