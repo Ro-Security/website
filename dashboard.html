@@ -30,7 +30,11 @@
             <span class="text-2xl font-bold text-white">Ro-Security</span>
         </div>
         <div id="user-info" class="hidden items-center space-x-4">
-            <span id="username" class="font-semibold text-white"></span>
+            <!-- FIX: Improved layout and added license status -->
+            <div class="text-right">
+                <p id="username" class="font-semibold text-white"></p>
+                <p id="license-status" class="text-xs text-purple-400 font-medium"></p>
+            </div>
             <img id="avatar" class="h-10 w-10 rounded-full" src="" alt="User Avatar">
             <button id="logout-button" class="bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-4 rounded-lg btn">Logout</button>
         </div>
@@ -44,6 +48,12 @@
         <h1 class="text-3xl font-bold text-white">Your Monitored Groups</h1>
         <div id="group-list" class="mt-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
     </main>
+
+    <!-- NEW: No License Message -->
+    <div id="no-license-message" class="container mx-auto px-6 py-24 text-center hidden">
+        <h2 class="text-3xl font-bold text-red-500">Access Denied</h2>
+        <p class="mt-4 text-gray-400 max-w-lg mx-auto">You do not have an active subscription. Please contact the service owner to purchase a license, or use `/mylicense` in our Discord server to check your status.</p>
+    </div>
 
     <!-- Settings Modal -->
     <div id="settings-modal" class="fixed inset-0 modal-bg items-center justify-center hidden">
@@ -126,8 +136,10 @@
             const userInfoDiv = document.getElementById('user-info');
             const loginContainer = document.getElementById('login-container');
             const dashboardContent = document.getElementById('dashboard-content');
+            const noLicenseMessage = document.getElementById('no-license-message');
             const usernameSpan = document.getElementById('username');
             const avatarImg = document.getElementById('avatar');
+            const licenseStatusSpan = document.getElementById('license-status');
             const loginButton = document.getElementById('login-button');
             const logoutButton = document.getElementById('logout-button');
             const groupListDiv = document.getElementById('group-list');
@@ -170,8 +182,14 @@
                         avatarImg.src = `https://cdn.discordapp.com/embed/avatars/${(BigInt(user.id) >> 22n) % 6n}.png`;
                     }
                     userSubscription = user.subscription;
-                    showDashboardState();
-                    loadGroups();
+                    // --- FIX: Check for subscription before showing dashboard ---
+                    if (userSubscription) {
+                        licenseStatusSpan.textContent = `${userSubscription.tier} License`;
+                        showDashboardState();
+                        loadGroups();
+                    } else {
+                        showNoLicenseState();
+                    }
                 } catch (error) {
                     console.error(error);
                     logout();
@@ -194,6 +212,13 @@
                 loginContainer.classList.add('hidden');
                 userInfoDiv.classList.remove('hidden');
                 dashboardContent.classList.remove('hidden');
+            }
+
+            function showNoLicenseState() {
+                loginContainer.classList.add('hidden');
+                dashboardContent.classList.add('hidden');
+                userInfoDiv.classList.remove('hidden'); // Still show user info
+                noLicenseMessage.classList.remove('hidden');
             }
 
             async function loadGroups() {
