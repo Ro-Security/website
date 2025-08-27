@@ -119,7 +119,8 @@
     </div>
 
     <script>
-        document.addEventListener('DOMContentLoaded', () => {
+        // --- FIX: Wrap all logic in a main function to ensure proper loading order ---
+        function main() {
             const API_BASE_URL = 'https://rosecurity.fly.dev'; 
             
             const userInfoDiv = document.getElementById('user-info');
@@ -143,6 +144,19 @@
 
             let userToken = null;
             let userSubscription = null;
+
+            function checkAuth() {
+                const fragment = new URLSearchParams(window.location.hash.slice(1));
+                const token = fragment.get('token') || localStorage.getItem('ro-security-token');
+                if (token) {
+                    userToken = token;
+                    localStorage.setItem('ro-security-token', token);
+                    window.location.hash = '';
+                    fetchUserInfo();
+                } else {
+                    showLoginState();
+                }
+            }
 
             async function fetchUserInfo() {
                 try {
@@ -370,8 +384,12 @@
             addModalCancelButton.addEventListener('click', closeAddGroupModal);
             addGroupForm.addEventListener('submit', handleAddGroupSubmit);
 
+            // Initial call to start the authentication process
             checkAuth();
-        });
+        }
+
+        // --- FIX: Call the main function after the DOM is fully loaded ---
+        document.addEventListener('DOMContentLoaded', main);
     </script>
 
 </body>
