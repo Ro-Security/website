@@ -30,7 +30,6 @@
             <span class="text-2xl font-bold text-white">Ro-Security</span>
         </div>
         <div id="user-info" class="hidden items-center space-x-4">
-            <!-- FIX: Improved layout and added license status -->
             <div class="text-right">
                 <p id="username" class="font-semibold text-white"></p>
                 <p id="license-status" class="text-xs text-purple-400 font-medium"></p>
@@ -45,7 +44,10 @@
 
     <!-- Main Dashboard Content -->
     <main id="dashboard-content" class="container mx-auto px-6 py-12 hidden">
-        <h1 class="text-3xl font-bold text-white">Your Monitored Groups</h1>
+        <div class="flex justify-between items-center">
+             <h1 class="text-3xl font-bold text-white">Your Monitored Groups</h1>
+             <p id="group-limit-status" class="text-lg font-medium text-gray-400"></p>
+        </div>
         <div id="group-list" class="mt-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
     </main>
 
@@ -130,7 +132,7 @@
 
     <script>
         // --- FIX: Wrap all logic in a main function to ensure proper loading order ---
-        function main() {
+        document.addEventListener('DOMContentLoaded', () => {
             const API_BASE_URL = 'https://rosecurity.fly.dev'; 
             
             const userInfoDiv = document.getElementById('user-info');
@@ -236,6 +238,10 @@
 
             function renderGroups(groups) {
                 groupListDiv.innerHTML = '';
+                const currentCount = groups.length;
+                const limit = userSubscription ? userSubscription.group_limit : 0;
+                groupLimitStatusSpan.textContent = `Usage: ${currentCount} / ${limit}`;
+
                 if (groups.length > 0) {
                     groups.forEach(group => {
                         const card = document.createElement('div');
@@ -255,6 +261,25 @@
                         groupListDiv.appendChild(card);
                     });
                 }
+                
+                groupListDiv.querySelectorAll('.manage-btn').forEach(button => {
+                    button.addEventListener('click', () => openSettingsModal(button.dataset.groupId));
+                });
+
+                const addCard = document.createElement('div');
+                addCard.className = 'card p-6 rounded-lg border-2 border-dashed border-gray-600 hover:border-indigo-500 transition-colors flex items-center justify-center cursor-pointer';
+                addCard.innerHTML = `<div class="text-center"><svg class="w-12 h-12 mx-auto text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg><p class="mt-2 font-semibold text-white">Add New Group</p></div>`;
+                
+                if (currentCount >= limit) {
+                    addCard.classList.add('premium-feature'); // Re-use disabled style
+                    addCard.querySelector('p').textContent = 'Group Limit Reached';
+                } else {
+                    addCard.addEventListener('click', () => {
+                        addGroupModal.classList.remove('hidden');
+                    });
+                }
+                groupListDiv.appendChild(addCard);
+            }
                 
                 groupListDiv.querySelectorAll('.manage-btn').forEach(button => {
                     button.addEventListener('click', () => openSettingsModal(button.dataset.groupId));
