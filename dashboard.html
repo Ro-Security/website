@@ -348,6 +348,19 @@
                     }
                 };
 
+                const isPremium = userSubscription && userSubscription.tier === 'Premium';
+                if (isPremium) {
+                    updatedSettings.exile_guard = {
+                        is_enabled: document.getElementById('exile-guard-enabled').checked,
+                        abuse_threshold: parseInt(document.getElementById('exile-threshold').value)
+                    },
+                    updatedSettings.wall_mod = {
+                        is_enabled: document.getElementById('wall-mod-enabled').checked,
+                        action: document.getElementById('wall-action').value,
+                        banned_words: document.getElementById('banned-words').value
+                    }
+                };
+
                 try {
                     const response = await fetch(`${API_BASE_URL}/api/group/${groupId}/settings`, {
                         method: 'POST',
