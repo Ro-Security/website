@@ -55,7 +55,6 @@
             <form id="settings-form">
                 <input type="hidden" id="modal-group-id">
                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    <!-- Left Column -->
                     <div class="lg:col-span-1 space-y-6">
                         <div class="p-4 border border-gray-700 rounded-lg">
                             <h3 class="font-semibold text-white mb-3">🛡️ Rank Abuse Protection</h3>
@@ -69,7 +68,6 @@
                             <div class="mt-3"><label for="exile-threshold" class="block text-sm font-medium">Exile Threshold</label><input type="number" id="exile-threshold" class="mt-1 block w-full bg-[#0f0f1b] border border-gray-600 rounded-md py-2 px-3 text-white"></div>
                         </div>
                     </div>
-                    <!-- Middle Column -->
                     <div class="lg:col-span-1 space-y-6">
                         <div id="wall-mod-section" class="p-4 border border-gray-700 rounded-lg">
                              <div class="flex items-center justify-between"><h3 class="font-semibold text-white">🗑️ Wall Moderation <span class="text-xs text-purple-400"></span></h3><label class="relative inline-flex items-center cursor-pointer"><input type="checkbox" id="wall-mod-enabled" class="sr-only peer"><div class="w-11 h-6 bg-gray-600 rounded-full peer-checked:after:translate-x-full after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div></label></div>
@@ -79,7 +77,6 @@
                             </div>
                         </div>
                     </div>
-                    <!-- Right Column -->
                     <div class="lg:col-span-1 space-y-6">
                          <div id="blacklist-section" class="p-4 border border-gray-700 rounded-lg">
                             <h3 class="font-semibold text-white mb-3">🚫 Group Blacklist <span class="text-xs text-purple-400"></span></h3>
@@ -94,6 +91,28 @@
                 <div class="mt-8 flex justify-end space-x-4">
                     <button type="button" id="modal-cancel-button" class="bg-gray-600 hover:bg-gray-700 text-white font-semibold py-2 px-4 rounded-lg btn">Cancel</button>
                     <button type="submit" class="bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-4 rounded-lg btn">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Add Group Modal -->
+    <div id="add-group-modal" class="fixed inset-0 modal-bg items-center justify-center hidden">
+        <div class="card rounded-lg w-full max-w-lg p-8 m-4">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-2xl font-bold text-white">Add a New Group</h2>
+                <button id="add-modal-close-button" class="text-gray-400 hover:text-white text-3xl">&times;</button>
+            </div>
+            <form id="add-group-form">
+                <div class="space-y-4">
+                    <div><label for="add-group-id" class="block text-sm font-medium">Roblox Group ID</label><input type="number" id="add-group-id" required class="mt-1 block w-full bg-[#0f0f1b] border border-gray-600 rounded-md py-2 px-3 text-white"></div>
+                    <div><label for="add-punish-role" class="block text-sm font-medium">Punish Role ID</label><input type="number" id="add-punish-role" required class="mt-1 block w-full bg-[#0f0f1b] border border-gray-600 rounded-md py-2 px-3 text-white"></div>
+                    <div><label for="add-abuse-threshold" class="block text-sm font-medium">Rank Abuse Threshold</label><input type="number" id="add-abuse-threshold" value="5" required class="mt-1 block w-full bg-[#0f0f1b] border border-gray-600 rounded-md py-2 px-3 text-white"></div>
+                    <div><label for="add-cookie" class="block text-sm font-medium">Bot Account .ROBLOSECURITY Cookie</label><input type="password" id="add-cookie" required class="mt-1 block w-full bg-[#0f0f1b] border border-gray-600 rounded-md py-2 px-3 text-white"><p class="text-xs text-gray-500 mt-1">This is stored securely and is never shown again.</p></div>
+                </div>
+                <div class="mt-8 flex justify-end space-x-4">
+                    <button type="button" id="add-modal-cancel-button" class="bg-gray-600 hover:bg-gray-700 text-white font-semibold py-2 px-4 rounded-lg btn">Cancel</button>
+                    <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-4 rounded-lg btn">Add Group</button>
                 </div>
             </form>
         </div>
@@ -117,22 +136,13 @@
             const settingsForm = document.getElementById('settings-form');
             const modalCloseButton = document.getElementById('modal-close-button');
             const modalCancelButton = document.getElementById('modal-cancel-button');
+            const addGroupModal = document.getElementById('add-group-modal');
+            const addGroupForm = document.getElementById('add-group-form');
+            const addModalCloseButton = document.getElementById('add-modal-close-button');
+            const addModalCancelButton = document.getElementById('add-modal-cancel-button');
 
             let userToken = null;
             let userSubscription = null;
-
-            function checkAuth() {
-                const fragment = new URLSearchParams(window.location.hash.slice(1));
-                const token = fragment.get('token') || localStorage.getItem('ro-security-token');
-                if (token) {
-                    userToken = token;
-                    localStorage.setItem('ro-security-token', token);
-                    window.location.hash = '';
-                    fetchUserInfo();
-                } else {
-                    showLoginState();
-                }
-            }
 
             async function fetchUserInfo() {
                 try {
@@ -214,7 +224,9 @@
                 const addCard = document.createElement('div');
                 addCard.className = 'card p-6 rounded-lg border-2 border-dashed border-gray-600 hover:border-indigo-500 transition-colors flex items-center justify-center cursor-pointer';
                 addCard.innerHTML = `<div class="text-center"><svg class="w-12 h-12 mx-auto text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg><p class="mt-2 font-semibold text-white">Add New Group</p></div>`;
-                addCard.addEventListener('click', () => alert('To add a new group, please use the /group add command in our Discord server.'));
+                addCard.addEventListener('click', () => {
+                    addGroupModal.classList.remove('hidden');
+                });
                 groupListDiv.appendChild(addCard);
             }
 
@@ -238,7 +250,7 @@
                         const label = section.querySelector('span');
                         if (isPremium) {
                             section.classList.remove('premium-feature');
-                            if(label) label.textContent = 'Premium';
+                            if(label) label.textContent = '💎';
                         } else {
                             section.classList.add('premium-feature');
                             if(label) label.textContent = 'Premium';
@@ -306,12 +318,57 @@
                     saveButton.disabled = false;
                 }
             }
+            
+            function closeAddGroupModal() {
+                addGroupModal.classList.add('hidden');
+                addGroupForm.reset();
+            }
+
+            async function handleAddGroupSubmit(event) {
+                event.preventDefault();
+                const saveButton = event.target.querySelector('button[type="submit"]');
+                saveButton.textContent = 'Adding...';
+                saveButton.disabled = true;
+
+                const newGroupData = {
+                    group_id: parseInt(document.getElementById('add-group-id').value),
+                    punish_role_id: parseInt(document.getElementById('add-punish-role').value),
+                    abuse_threshold: parseInt(document.getElementById('add-abuse-threshold').value),
+                    cookie: document.getElementById('add-cookie').value
+                };
+
+                try {
+                    const response = await fetch(`${API_BASE_URL}/api/groups/add`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${userToken}` },
+                        body: JSON.stringify(newGroupData)
+                    });
+
+                    const result = await response.json();
+                    if (!response.ok) {
+                        throw new Error(result.error || 'Failed to add group');
+                    }
+                    
+                    alert(result.message);
+                    closeAddGroupModal();
+                    loadGroups();
+                } catch (error) {
+                    console.error(error);
+                    alert(`Error: ${error.message}`);
+                } finally {
+                    saveButton.textContent = 'Add Group';
+                    saveButton.disabled = false;
+                }
+            }
 
             loginButton.addEventListener('click', () => { window.location.href = `${API_BASE_URL}/login`; });
             logoutButton.addEventListener('click', logout);
             modalCloseButton.addEventListener('click', closeSettingsModal);
             modalCancelButton.addEventListener('click', closeSettingsModal);
             settingsForm.addEventListener('submit', handleFormSubmit);
+            addModalCloseButton.addEventListener('click', closeAddGroupModal);
+            addModalCancelButton.addEventListener('click', closeAddGroupModal);
+            addGroupForm.addEventListener('submit', handleAddGroupSubmit);
 
             checkAuth();
         });
