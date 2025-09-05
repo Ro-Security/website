@@ -7,8 +7,8 @@
     <meta http-equiv="Content-Security-Policy" 
           content="default-src 'self'; 
                    script-src 'self' https://cdn.tailwindcss.com 'unsafe-inline'; 
-                   style-src 'self' https://fonts.googleapis.com 'unsafe-inline'; 
-                   font-src https://fonts.gstatic.com; 
+                   style-src 'self' https://fonts.googleapis.com 'unsafe-inline' https://cdnjs.cloudflare.com; 
+                   font-src https://fonts.gstatic.com https://cdnjs.cloudflare.com; 
                    img-src 'self' https://i.imgur.com https://cdn.discordapp.com; 
                    connect-src 'self' https://rosecurity.fly.dev; 
                    object-src 'none'; 
@@ -20,6 +20,7 @@
 
     <title>Dashboard | Ro-Security</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" integrity="sha512-SnH5WK+bZxgPHs44uWIX+LLJAJ9/2PkPKZ5QiAj6Ta86w+fsb2TkcmfRyVX3pBnMFcV7oQPJkl9QevSCWr3W6A==" crossorigin="anonymous" referrerpolicy="no-referrer" />
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
@@ -80,20 +81,20 @@
                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
                     <div class="lg:col-span-1 space-y-6">
                         <div class="p-4 border border-gray-700 rounded-lg">
-                            <h3 class="font-semibold text-white mb-3">🛡️ Rank Abuse Protection</h3>
+                            <h3 class="font-semibold text-white mb-3"><i class="fa-solid fa-shield-halved mr-2"></i>Rank Abuse Protection</h3>
                             <div class="space-y-4">
                                 <div><label for="abuse-threshold" class="block text-sm font-medium">Abuse Threshold</label><input type="number" id="abuse-threshold" class="mt-1 block w-full bg-[#0f0f1b] border border-gray-600 rounded-md py-2 px-3 text-white"></div>
                                 <div><label for="punish-role" class="block text-sm font-medium">Punish Role ID</label><input type="number" id="punish-role" class="mt-1 block w-full bg-[#0f0f1b] border border-gray-600 rounded-md py-2 px-3 text-white"></div>
                             </div>
                         </div>
                         <div id="exile-guard-section" class="p-4 border border-gray-700 rounded-lg">
-                            <div class="flex items-center justify-between"><h3 class="font-semibold text-white">⚔️ Exile Guard <span class="text-xs text-purple-400"></span></h3><label class="relative inline-flex items-center cursor-pointer"><input type="checkbox" id="exile-guard-enabled" class="sr-only peer"><div class="w-11 h-6 bg-gray-600 rounded-full peer-checked:after:translate-x-full after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div></label></div>
+                            <div class="flex items-center justify-between"><h3 class="font-semibold text-white"><i class="fa-solid fa-gavel mr-2"></i>Exile Guard <span class="text-xs text-purple-400"></span></h3><label class="relative inline-flex items-center cursor-pointer"><input type="checkbox" id="exile-guard-enabled" class="sr-only peer"><div class="w-11 h-6 bg-gray-600 rounded-full peer-checked:after:translate-x-full after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div></label></div>
                             <div class="mt-3"><label for="exile-threshold" class="block text-sm font-medium">Exile Threshold</label><input type="number" id="exile-threshold" class="mt-1 block w-full bg-[#0f0f1b] border border-gray-600 rounded-md py-2 px-3 text-white"></div>
                         </div>
                     </div>
                     <div class="lg:col-span-1 space-y-6">
                         <div id="wall-mod-section" class="p-4 border border-gray-700 rounded-lg">
-                             <div class="flex items-center justify-between"><h3 class="font-semibold text-white">🗑️ Wall Moderation <span class="text-xs text-purple-400"></span></h3><label class="relative inline-flex items-center cursor-pointer"><input type="checkbox" id="wall-mod-enabled" class="sr-only peer"><div class="w-11 h-6 bg-gray-600 rounded-full peer-checked:after:translate-x-full after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div></label></div>
+                             <div class="flex items-center justify-between"><h3 class="font-semibold text-white"><i class="fa-solid fa-trash-can mr-2"></i>Wall Moderation <span class="text-xs text-purple-400"></span></h3><label class="relative inline-flex items-center cursor-pointer"><input type="checkbox" id="wall-mod-enabled" class="sr-only peer"><div class="w-11 h-6 bg-gray-600 rounded-full peer-checked:after:translate-x-full after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div></label></div>
                             <div class="mt-3 space-y-4">
                                 <div><label for="wall-action" class="block text-sm font-medium">Action</label><select id="wall-action" class="mt-1 block w-full bg-[#0f0f1b] border border-gray-600 rounded-md py-2 px-3 text-white"><option value="Delete">Delete Post</option><option value="DeleteAndExile">Delete & Exile</option></select></div>
                                 <div><label for="banned-words" class="block text-sm font-medium">Banned Words (comma-separated)</label><textarea id="banned-words" rows="4" class="mt-1 block w-full bg-[#0f0f1b] border border-gray-600 rounded-md py-2 px-3 text-white"></textarea></div>
@@ -102,11 +103,11 @@
                     </div>
                     <div class="lg:col-span-1 space-y-6">
                          <div id="blacklist-section" class="p-4 border border-gray-700 rounded-lg">
-                            <h3 class="font-semibold text-white mb-3">🚫 Group Blacklist <span class="text-xs text-purple-400"></span></h3>
+                            <h3 class="font-semibold text-white mb-3"><i class="fa-solid fa-ban mr-2"></i>Group Blacklist <span class="text-xs text-purple-400"></span></h3>
                             <div class="space-y-2"><p class="text-sm text-gray-400">Manage via Discord commands: `/blacklist add` and `/blacklist remove`</p></div>
                         </div>
                          <div class="p-4 border border-gray-700 rounded-lg">
-                            <h3 class="font-semibold text-white mb-3">🔑 Admin Whitelist</h3>
+                            <h3 class="font-semibold text-white mb-3"><i class="fa-solid fa-key mr-2"></i>Admin Whitelist</h3>
                              <div class="space-y-2"><p class="text-sm text-gray-400">Manage via Discord commands: `/group whitelist add` and `/group whitelist remove`</p></div>
                         </div>
                     </div>
