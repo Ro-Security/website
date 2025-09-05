@@ -108,7 +108,12 @@
                         </div>
                          <div class="p-4 border border-gray-700 rounded-lg">
                             <h3 class="font-semibold text-white mb-3"><i class="fa-solid fa-key mr-2"></i>Admin Whitelist</h3>
-                             <div class="space-y-2"><p class="text-sm text-gray-400">Manage via Discord commands: `/group whitelist add` and `/group whitelist remove`</p></div>
+                            <div id="whitelist-list" class="space-y-2 mb-4 max-h-32 overflow-y-auto">
+                                </div>
+                            <div class="flex space-x-2">
+                                <input type="number" id="whitelist-user-id" placeholder="Enter Roblox User ID" class="block w-full bg-[#0f0f1b] border-gray-600 rounded-md py-2 px-3 text-white">
+                                <button type="button" id="add-whitelist-btn" class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-4 rounded-lg btn">Add</button>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -171,6 +176,7 @@
             const addGroupForm = document.getElementById('add-group-form');
             const addModalCloseButton = document.getElementById('add-modal-close-button');
             const addModalCancelButton = document.getElementById('add-modal-cancel-button');
+            const addWhitelistBtn = document.getElementById('add-whitelist-btn');
 
             let userToken = null;
             let userSubscription = null;
@@ -178,9 +184,7 @@
             function showToast(message, isError = false) {
                 const toast = document.getElementById('toast');
                 const toastMessage = document.getElementById('toast-message');
-
                 toastMessage.textContent = message;
-                
                 if (isError) {
                     toast.classList.remove('bg-green-600');
                     toast.classList.add('bg-red-600');
@@ -188,12 +192,74 @@
                     toast.classList.remove('bg-red-600');
                     toast.classList.add('bg-green-600');
                 }
-
                 toast.classList.remove('translate-y-20', 'opacity-0');
-
                 setTimeout(() => {
                     toast.classList.add('translate-y-20', 'opacity-0');
                 }, 3000);
+            }
+
+            function renderWhitelist(whitelist) {
+                const whitelistList = document.getElementById('whitelist-list');
+                whitelistList.innerHTML = '';
+                if (whitelist.length === 0) {
+                    whitelistList.innerHTML = '<p class="text-sm text-gray-500">No whitelisted users.</p>';
+                    return;
+                }
+                whitelist.forEach(userId => {
+                    const userDiv = document.createElement('div');
+                    userDiv.className = 'flex items-center justify-between bg-[#0f0f1b] p-2 rounded';
+                    userDiv.innerHTML = `
+                        <span class="text-sm">${userId}</span>
+                        <button type="button" class="text-red-500 hover:text-red-400 remove-whitelist-btn" data-user-id="${userId}">&times;</button>
+                    `;
+                    whitelistList.appendChild(userDiv);
+                });
+                document.querySelectorAll('.remove-whitelist-btn').forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        removeWhitelistUser(btn.dataset.userId);
+                    });
+                });
+            }
+
+            async function addWhitelistUser() {
+                const groupId = document.getElementById('modal-group-id').value;
+                const userIdInput = document.getElementById('whitelist-user-id');
+                const userId = userIdInput.value;
+                if (!userId) {
+                    showToast('Please enter a user ID.', true);
+                    return;
+                }
+                try {
+                    const response = await fetch(`${API_BASE_URL}/api/group/${groupId}/whitelist`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${userToken}` },
+                        body: JSON.stringify({ user_id: parseInt(userId) })
+                    });
+                    const result = await response.json();
+                    if (!response.ok) throw new Error(result.error);
+                    showToast(result.message);
+                    userIdInput.value = '';
+                    openSettingsModal(groupId);
+                } catch (error) {
+                    showToast(`Error: ${error.message}`, true);
+                }
+            }
+            
+            async function removeWhitelistUser(userId) {
+                const groupId = document.getElementById('modal-group-id').value;
+                try {
+                    const response = await fetch(`${API_BASE_URL}/api/group/${groupId}/whitelist/remove`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${userToken}` },
+                        body: JSON.stringify({ user_id: parseInt(userId) })
+                    });
+                    const result = await response.json();
+                    if (!response.ok) throw new Error(result.error);
+                    showToast(result.message);
+                    openSettingsModal(groupId);
+                } catch (error) {
+                    showToast(`Error: ${error.message}`, true);
+                }
             }
 
             function checkAuth() {
@@ -278,7 +344,6 @@
                 const currentCount = groups.length;
                 const limit = userSubscription ? userSubscription.group_limit : 0;
                 groupLimitStatusSpan.textContent = `Usage: ${currentCount} / ${limit}`;
-
                 if (groups.length > 0) {
                     groups.forEach(group => {
                         const card = document.createElement('div');
@@ -298,15 +363,12 @@
                         groupListDiv.appendChild(card);
                     });
                 }
-                
                 groupListDiv.querySelectorAll('.manage-btn').forEach(button => {
                     button.addEventListener('click', () => openSettingsModal(button.dataset.groupId));
                 });
-
                 const addCard = document.createElement('div');
                 addCard.className = 'card p-6 rounded-lg border-2 border-dashed border-gray-600 hover:border-indigo-500 transition-colors flex items-center justify-center cursor-pointer';
                 addCard.innerHTML = `<div class="text-center"><svg class="w-12 h-12 mx-auto text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg><p class="mt-2 font-semibold text-white">Add New Group</p></div>`;
-                
                 if (currentCount >= limit) {
                     addCard.classList.add('premium-feature');
                     addCard.querySelector('p').textContent = 'Group Limit Reached';
@@ -323,16 +385,12 @@
                     const response = await fetch(`${API_BASE_URL}/api/group/${groupId}/settings`, { headers: { 'Authorization': `Bearer ${userToken}` } });
                     if (!response.ok) throw new Error('Failed to fetch settings');
                     const settings = await response.json();
-
                     modalGroupName.textContent = settings.core.name || `ID: ${groupId}`;
                     modalGroupIdInput.value = groupId;
-                    
                     document.getElementById('abuse-threshold').value = settings.core.abuse_threshold;
                     document.getElementById('punish-role').value = settings.core.punish_role_id;
-                    
                     const isPremium = userSubscription && userSubscription.tier === 'Premium';
                     const premiumSections = ['exile-guard-section', 'wall-mod-section', 'blacklist-section'];
-
                     premiumSections.forEach(id => {
                         const section = document.getElementById(id);
                         const label = section.querySelector('span');
@@ -344,13 +402,12 @@
                             if(label) label.textContent = 'Premium';
                         }
                     });
-
                     document.getElementById('exile-guard-enabled').checked = settings.exile_guard.is_enabled;
                     document.getElementById('exile-threshold').value = settings.exile_guard.abuse_threshold;
                     document.getElementById('wall-mod-enabled').checked = settings.wall_mod.is_enabled;
                     document.getElementById('wall-action').value = settings.wall_mod.action;
                     document.getElementById('banned-words').value = settings.wall_mod.banned_words;
-                    
+                    renderWhitelist(settings.whitelist || []);
                     settingsModal.classList.remove('hidden');
                 } catch (error) {
                     console.error(error);
@@ -367,9 +424,7 @@
                 const saveButton = event.target.querySelector('button[type="submit"]');
                 saveButton.textContent = 'Saving...';
                 saveButton.disabled = true;
-
                 const groupId = modalGroupIdInput.value;
-                
                 const updatedSettings = {
                     abuse_threshold: parseInt(document.getElementById('abuse-threshold').value),
                     punish_role_id: parseInt(document.getElementById('punish-role').value),
@@ -383,7 +438,6 @@
                         banned_words: document.getElementById('banned-words').value
                     }
                 };
-
                 const isPremium = userSubscription && userSubscription.tier === 'Premium';
                 if (isPremium) {
                     updatedSettings.exile_guard = {
@@ -396,19 +450,16 @@
                         banned_words: document.getElementById('banned-words').value
                     }
                 };
-
                 try {
                     const response = await fetch(`${API_BASE_URL}/api/group/${groupId}/settings`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${userToken}` },
                         body: JSON.stringify(updatedSettings)
                     });
-
                     const result = await response.json();
                     if (!response.ok) {
                         throw new Error(result.error || 'Failed to save settings');
                     }
-                    
                     showToast(result.message);
                     closeSettingsModal();
                 } catch (error) {
@@ -430,7 +481,6 @@
                 const saveButton = event.target.querySelector('button[type="submit"]');
                 saveButton.textContent = 'Adding...';
                 saveButton.disabled = true;
-
                 const newGroupData = {
                     group_id: parseInt(document.getElementById('add-group-id').value),
                     punish_role_id: parseInt(document.getElementById('add-punish-role').value),
@@ -438,19 +488,16 @@
                     cookie: document.getElementById('add-cookie').value,
                     alert_channel_id: parseInt(document.getElementById('add-alert-channel').value)
                 };
-
                 try {
                     const response = await fetch(`${API_BASE_URL}/api/groups/add`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${userToken}` },
                         body: JSON.stringify(newGroupData)
                     });
-
                     const result = await response.json();
                     if (!response.ok) {
                         throw new Error(result.error || 'Failed to add group');
                     }
-                    
                     showToast(result.message);
                     closeAddGroupModal();
                     loadGroups();
@@ -471,6 +518,7 @@
             addModalCloseButton.addEventListener('click', closeAddGroupModal);
             addModalCancelButton.addEventListener('click', closeAddGroupModal);
             addGroupForm.addEventListener('submit', handleAddGroupSubmit);
+            addWhitelistBtn.addEventListener('click', addWhitelistUser);
 
             checkAuth();
         });
