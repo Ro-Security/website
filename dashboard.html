@@ -100,6 +100,22 @@
                                 <div><label for="banned-words" class="block text-sm font-medium">Banned Words (comma-separated)</label><textarea id="banned-words" rows="4" class="mt-1 block w-full bg-[#0f0f1b] border border-gray-600 rounded-md py-2 px-3 text-white"></textarea></div>
                             </div>
                         </div>
+                        <div id="join-request-section" class="p-4 border border-gray-700 rounded-lg">
+                            <div class="flex items-center justify-between">
+                                <h3 class="font-semibold text-white"><i class="fa-solid fa-user-plus mr-2"></i>Join Requests <span class="text-xs text-purple-400"></span></h3>
+                                <label class="relative inline-flex items-center cursor-pointer"><input type="checkbox" id="join-requests-enabled" class="sr-only peer"><div class="w-11 h-6 bg-gray-600 rounded-full peer-checked:after:translate-x-full after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div></label>
+                            </div>
+                            <div class="mt-3 space-y-4">
+                                <div>
+                                    <label for="join-requests-min-age" class="block text-sm font-medium">Min Account Age (Days)</label>
+                                    <input type="number" id="join-requests-min-age" class="mt-1 block w-full bg-[#0f0f1b] border border-gray-600 rounded-md py-2 px-3 text-white">
+                                </div>
+                                <div class="flex items-center justify-between">
+                                    <label for="join-requests-require-slot" class="text-sm font-medium">Require Open Group Slot</label>
+                                    <label class="relative inline-flex items-center cursor-pointer"><input type="checkbox" id="join-requests-require-slot" class="sr-only peer"><div class="w-11 h-6 bg-gray-600 rounded-full peer-checked:after:translate-x-full after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div></label>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                     <div class="lg:col-span-1 space-y-6">
                          <div id="blacklist-section" class="p-4 border border-gray-700 rounded-lg">
@@ -233,12 +249,10 @@
 
                 let userIdToAdd;
                 
-                // Check if input is a number (ID) or a string (username)
                 if (/^\d+$/.test(userInput)) {
                     userIdToAdd = parseInt(userInput);
                     await performAddWhitelist(groupId, userIdToAdd, userIdInput);
                 } else {
-                    // It's a username, so we need to get the ID first
                     try {
                         const idResponse = await fetch(`${API_BASE_URL}/api/roblox/get-id-from-username`, {
                              method: 'POST',
@@ -249,7 +263,7 @@
                         if (!idResponse.ok) throw new Error(idResult.error);
                         
                         userIdToAdd = idResult.id;
-                        showToast(`Found user: ${idResult.name} (${idResult.id}). Adding to whitelist...`);
+                        showToast(`Found user: ${idResult.name} (${idResult.id}). Adding...`);
                         await performAddWhitelist(groupId, userIdToAdd, userIdInput);
                     } catch (error) {
                         showToast(`Error: ${error.message}`, true);
@@ -268,8 +282,8 @@
                     if (!response.ok) throw new Error(result.error);
                     
                     showToast(result.message);
-                    if(inputElement) inputElement.value = ''; // Clear input
-                    openSettingsModal(groupId); // Refresh modal data
+                    if(inputElement) inputElement.value = '';
+                    openSettingsModal(groupId);
                 } catch (error) {
                     showToast(`Error: ${error.message}`, true);
                 }
@@ -303,7 +317,7 @@
                     if (!response.ok) throw new Error(result.error);
                     
                     showToast(result.message);
-                    loadGroups(); // Refresh the group list
+                    loadGroups();
                 } catch (error) {
                     showToast(`Error: ${error.message}`, true);
                 }
@@ -411,14 +425,12 @@
                         groupListDiv.appendChild(card);
                     });
                 }
-
                 groupListDiv.querySelectorAll('.manage-btn').forEach(button => {
                     button.addEventListener('click', (e) => {
                         e.stopPropagation();
                         openSettingsModal(button.dataset.groupId)
                     });
                 });
-                
                 groupListDiv.querySelectorAll('.remove-btn').forEach(button => {
                     button.addEventListener('click', (e) => {
                         e.stopPropagation();
@@ -428,7 +440,6 @@
                         }
                     });
                 });
-
                 const addCard = document.createElement('div');
                 addCard.className = 'card p-6 rounded-lg border-2 border-dashed border-gray-600 hover:border-indigo-500 transition-colors flex items-center justify-center cursor-pointer';
                 addCard.innerHTML = `<div class="text-center"><svg class="w-12 h-12 mx-auto text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg><p class="mt-2 font-semibold text-white">Add New Group</p></div>`;
@@ -453,7 +464,7 @@
                     document.getElementById('abuse-threshold').value = settings.core.abuse_threshold;
                     document.getElementById('punish-role').value = settings.core.punish_role_id;
                     const isPremium = userSubscription && userSubscription.tier === 'Premium';
-                    const premiumSections = ['exile-guard-section', 'wall-mod-section', 'blacklist-section'];
+                    const premiumSections = ['exile-guard-section', 'wall-mod-section', 'blacklist-section', 'join-request-section'];
                     premiumSections.forEach(id => {
                         const section = document.getElementById(id);
                         const label = section.querySelector('span');
@@ -465,11 +476,21 @@
                             if(label) label.textContent = 'Premium';
                         }
                     });
-                    document.getElementById('exile-guard-enabled').checked = settings.exile_guard.is_enabled;
-                    document.getElementById('exile-threshold').value = settings.exile_guard.abuse_threshold;
-                    document.getElementById('wall-mod-enabled').checked = settings.wall_mod.is_enabled;
-                    document.getElementById('wall-action').value = settings.wall_mod.action;
-                    document.getElementById('banned-words').value = settings.wall_mod.banned_words;
+                    
+                    const exileGuardSettings = settings.exile_guard || {};
+                    document.getElementById('exile-guard-enabled').checked = exileGuardSettings.is_enabled || false;
+                    document.getElementById('exile-threshold').value = exileGuardSettings.abuse_threshold || 10;
+                    
+                    const wallModSettings = settings.wall_mod || {};
+                    document.getElementById('wall-mod-enabled').checked = wallModSettings.is_enabled || false;
+                    document.getElementById('wall-action').value = wallModSettings.action || 'Delete';
+                    document.getElementById('banned-words').value = wallModSettings.banned_words || '';
+                    
+                    const joinRequestSettings = settings.join_requests || {};
+                    document.getElementById('join-requests-enabled').checked = joinRequestSettings.is_enabled || false;
+                    document.getElementById('join-requests-min-age').value = joinRequestSettings.min_account_age_days || 30;
+                    document.getElementById('join-requests-require-slot').checked = joinRequestSettings.require_group_slot === false ? false : true;
+
                     renderWhitelist(settings.whitelist || []);
                     settingsModal.classList.remove('hidden');
                 } catch (error) {
@@ -488,31 +509,30 @@
                 saveButton.textContent = 'Saving...';
                 saveButton.disabled = true;
                 const groupId = modalGroupIdInput.value;
+                
                 const updatedSettings = {
-                    abuse_threshold: parseInt(document.getElementById('abuse-threshold').value),
                     punish_role_id: parseInt(document.getElementById('punish-role').value),
-                    exile_guard: {
-                        is_enabled: document.getElementById('exile-guard-enabled').checked,
-                        abuse_threshold: parseInt(document.getElementById('exile-threshold').value)
-                    },
-                    wall_mod: {
-                        is_enabled: document.getElementById('wall-mod-enabled').checked,
-                        action: document.getElementById('wall-action').value,
-                        banned_words: document.getElementById('banned-words').value
-                    }
+                    abuse_threshold: parseInt(document.getElementById('abuse-threshold').value)
                 };
+
                 const isPremium = userSubscription && userSubscription.tier === 'Premium';
                 if (isPremium) {
                     updatedSettings.exile_guard = {
                         is_enabled: document.getElementById('exile-guard-enabled').checked,
                         abuse_threshold: parseInt(document.getElementById('exile-threshold').value)
-                    },
+                    };
                     updatedSettings.wall_mod = {
                         is_enabled: document.getElementById('wall-mod-enabled').checked,
                         action: document.getElementById('wall-action').value,
                         banned_words: document.getElementById('banned-words').value
-                    }
-                };
+                    };
+                    updatedSettings.join_requests = {
+                        is_enabled: document.getElementById('join-requests-enabled').checked,
+                        min_account_age_days: parseInt(document.getElementById('join-requests-min-age').value),
+                        require_group_slot: document.getElementById('join-requests-require-slot').checked
+                    };
+                }
+
                 try {
                     const response = await fetch(`${API_BASE_URL}/api/group/${groupId}/settings`, {
                         method: 'POST',
