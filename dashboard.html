@@ -111,7 +111,7 @@
                             <div id="whitelist-list" class="space-y-2 mb-4 max-h-32 overflow-y-auto">
                                 </div>
                             <div class="flex space-x-2">
-                                <input type="number" id="whitelist-user-id" placeholder="Enter Roblox User ID" class="block w-full bg-[#0f0f1b] border-gray-600 rounded-md py-2 px-3 text-white">
+                                <input type="text" id="whitelist-user-id" placeholder="Enter Roblox Username or ID" class="block w-full bg-[#0f0f1b] border-gray-600 rounded-md py-2 px-3 text-white">
                                 <button type="button" id="add-whitelist-btn" class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-4 rounded-lg btn">Add</button>
                             </div>
                         </div>
@@ -224,22 +224,52 @@
             async function addWhitelistUser() {
                 const groupId = document.getElementById('modal-group-id').value;
                 const userIdInput = document.getElementById('whitelist-user-id');
-                const userId = userIdInput.value;
-                if (!userId) {
-                    showToast('Please enter a user ID.', true);
+                const userInput = userIdInput.value.trim();
+
+                if (!userInput) {
+                    showToast('Please enter a username or ID.', true);
                     return;
                 }
-                try {
+
+                let userIdToAdd;
+                
+                // Check if input is a number (ID) or a string (username)
+                if (/^\d+$/.test(userInput)) {
+                    userIdToAdd = parseInt(userInput);
+                    await performAddWhitelist(groupId, userIdToAdd, userIdInput);
+                } else {
+                    // It's a username, so we need to get the ID first
+                    try {
+                        const idResponse = await fetch(`${API_BASE_URL}/api/roblox/get-id-from-username`, {
+                             method: 'POST',
+                             headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${userToken}` },
+                             body: JSON.stringify({ username: userInput })
+                        });
+                        const idResult = await idResponse.json();
+                        if (!idResponse.ok) throw new Error(idResult.error);
+                        
+                        userIdToAdd = idResult.id;
+                        showToast(`Found user: ${idResult.name} (${idResult.id}). Adding to whitelist...`);
+                        await performAddWhitelist(groupId, userIdToAdd, userIdInput);
+                    } catch (error) {
+                        showToast(`Error: ${error.message}`, true);
+                    }
+                }
+            }
+
+            async function performAddWhitelist(groupId, userId, inputElement) {
+                 try {
                     const response = await fetch(`${API_BASE_URL}/api/group/${groupId}/whitelist`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${userToken}` },
-                        body: JSON.stringify({ user_id: parseInt(userId) })
+                        body: JSON.stringify({ user_id: userId })
                     });
                     const result = await response.json();
                     if (!response.ok) throw new Error(result.error);
+                    
                     showToast(result.message);
-                    userIdInput.value = '';
-                    openSettingsModal(groupId);
+                    if(inputElement) inputElement.value = ''; // Clear input
+                    openSettingsModal(groupId); // Refresh modal data
                 } catch (error) {
                     showToast(`Error: ${error.message}`, true);
                 }
@@ -255,8 +285,25 @@
                     });
                     const result = await response.json();
                     if (!response.ok) throw new Error(result.error);
+                    
                     showToast(result.message);
                     openSettingsModal(groupId);
+                } catch (error) {
+                    showToast(`Error: ${error.message}`, true);
+                }
+            }
+            
+            async function removeGroup(groupId) {
+                try {
+                    const response = await fetch(`${API_BASE_URL}/api/group/${groupId}`, {
+                        method: 'DELETE',
+                        headers: { 'Authorization': `Bearer ${userToken}` }
+                    });
+                    const result = await response.json();
+                    if (!response.ok) throw new Error(result.error);
+                    
+                    showToast(result.message);
+                    loadGroups(); // Refresh the group list
                 } catch (error) {
                     showToast(`Error: ${error.message}`, true);
                 }
@@ -347,7 +394,7 @@
                 if (groups.length > 0) {
                     groups.forEach(group => {
                         const card = document.createElement('div');
-                        card.className = 'card p-6 rounded-lg flex flex-col justify-between hover:border-indigo-500 transition-colors cursor-pointer';
+                        card.className = 'card p-6 rounded-lg flex flex-col justify-between';
                         card.innerHTML = `
                             <div>
                                 <div class="flex items-center justify-between">
@@ -356,16 +403,32 @@
                                 </div>
                                 <p class="text-sm text-gray-400 mt-1">ID: ${group.group_id}</p>
                             </div>
-                            <div class="mt-6">
-                                <button class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-4 rounded-lg btn manage-btn" data-group-id="${group.group_id}">Manage Settings</button>
+                            <div class="mt-6 flex space-x-2">
+                                <button class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-4 rounded-lg btn manage-btn" data-group-id="${group.group_id}">Manage</button>
+                                <button class="bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-4 rounded-lg btn remove-btn" data-group-id="${group.group_id}"><i class="fa-solid fa-trash-can"></i></button>
                             </div>
                         `;
                         groupListDiv.appendChild(card);
                     });
                 }
+
                 groupListDiv.querySelectorAll('.manage-btn').forEach(button => {
-                    button.addEventListener('click', () => openSettingsModal(button.dataset.groupId));
+                    button.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        openSettingsModal(button.dataset.groupId)
+                    });
                 });
+                
+                groupListDiv.querySelectorAll('.remove-btn').forEach(button => {
+                    button.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        const groupId = button.dataset.groupId;
+                        if (confirm(`Are you sure you want to remove group ${groupId}? This cannot be undone.`)) {
+                            removeGroup(groupId);
+                        }
+                    });
+                });
+
                 const addCard = document.createElement('div');
                 addCard.className = 'card p-6 rounded-lg border-2 border-dashed border-gray-600 hover:border-indigo-500 transition-colors flex items-center justify-center cursor-pointer';
                 addCard.innerHTML = `<div class="text-center"><svg class="w-12 h-12 mx-auto text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg><p class="mt-2 font-semibold text-white">Add New Group</p></div>`;
