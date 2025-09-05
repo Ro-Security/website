@@ -78,7 +78,7 @@
             </div>
             <form id="settings-form">
                 <input type="hidden" id="modal-group-id">
-                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     <div class="lg:col-span-1 space-y-6">
                         <div class="p-4 border border-gray-700 rounded-lg">
                             <h3 class="font-semibold text-white mb-3"><i class="fa-solid fa-shield-halved mr-2"></i>Rank Abuse Protection</h3>
@@ -142,6 +142,10 @@
         </div>
     </div>
 
+    <div id="toast" class="fixed bottom-5 right-5 bg-green-600 text-white py-2 px-4 rounded-lg shadow-lg transform translate-y-20 opacity-0 transition-all duration-300">
+        <p id="toast-message"></p>
+    </div>
+
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             const API_BASE_URL = 'https://rosecurity.fly.dev'; 
@@ -170,6 +174,27 @@
 
             let userToken = null;
             let userSubscription = null;
+
+            function showToast(message, isError = false) {
+                const toast = document.getElementById('toast');
+                const toastMessage = document.getElementById('toast-message');
+
+                toastMessage.textContent = message;
+                
+                if (isError) {
+                    toast.classList.remove('bg-green-600');
+                    toast.classList.add('bg-red-600');
+                } else {
+                    toast.classList.remove('bg-red-600');
+                    toast.classList.add('bg-green-600');
+                }
+
+                toast.classList.remove('translate-y-20', 'opacity-0');
+
+                setTimeout(() => {
+                    toast.classList.add('translate-y-20', 'opacity-0');
+                }, 3000);
+            }
 
             function checkAuth() {
                 const fragment = new URLSearchParams(window.location.hash.slice(1));
@@ -257,7 +282,7 @@
                 if (groups.length > 0) {
                     groups.forEach(group => {
                         const card = document.createElement('div');
-                        card.className = 'card p-6 rounded-lg flex flex-col justify-between';
+                        card.className = 'card p-6 rounded-lg flex flex-col justify-between hover:border-indigo-500 transition-colors cursor-pointer';
                         card.innerHTML = `
                             <div>
                                 <div class="flex items-center justify-between">
@@ -329,7 +354,7 @@
                     settingsModal.classList.remove('hidden');
                 } catch (error) {
                     console.error(error);
-                    alert('Error: Could not load group settings.');
+                    showToast('Error: Could not load group settings.', true);
                 }
             }
 
@@ -384,11 +409,11 @@
                         throw new Error(result.error || 'Failed to save settings');
                     }
                     
-                    alert(result.message);
+                    showToast(result.message);
                     closeSettingsModal();
                 } catch (error) {
                     console.error(error);
-                    alert(`Error: ${error.message}`);
+                    showToast(`Error: ${error.message}`, true);
                 } finally {
                     saveButton.textContent = 'Save Changes';
                     saveButton.disabled = false;
@@ -426,12 +451,12 @@
                         throw new Error(result.error || 'Failed to add group');
                     }
                     
-                    alert(result.message);
+                    showToast(result.message);
                     closeAddGroupModal();
                     loadGroups();
                 } catch (error) {
                     console.error(error);
-                    alert(`Error: ${error.message}`);
+                    showToast(`Error: ${error.message}`, true);
                 } finally {
                     saveButton.textContent = 'Add Group';
                     saveButton.disabled = false;
