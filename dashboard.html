@@ -151,7 +151,7 @@
             <form id="add-group-form">
                 <div class="space-y-4">
                     <div><label for="add-group-id" class="block text-sm font-medium">Roblox Group ID</label><input type="number" id="add-group-id" required class="mt-1 block w-full bg-[#0f0f1b] border border-gray-600 rounded-md py-2 px-3 text-white"></div>
-                    <div><label for="add-alert-channel" class="block text-sm font-medium">Alert Channel ID</label><input type="number" id="add-alert-channel" required class="mt-1 block w-full bg-[#0f0f1b] border border-gray-600 rounded-md py-2 px-3 text-white"><p class="text-xs text-gray-500 mt-1">The bot must be in the server with this channel.</p></div>
+                    <div><label for="add-alert-channel" class="block text-sm font-medium">Alert Channel ID</label><input type="text" pattern="[0-9]*" id="add-alert-channel" required class="mt-1 block w-full bg-[#0f0f1b] border border-gray-600 rounded-md py-2 px-3 text-white"><p class="text-xs text-gray-500 mt-1">The bot must be in the server with this channel.</p></div>
                     <div><label for="add-punish-role" class="block text-sm font-medium">Punish Role ID</label><input type="number" id="add-punish-role" required class="mt-1 block w-full bg-[#0f0f1b] border border-gray-600 rounded-md py-2 px-3 text-white"></div>
                     <div><label for="add-abuse-threshold" class="block text-sm font-medium">Rank Abuse Threshold</label><input type="number" id="add-abuse-threshold" value="5" required class="mt-1 block w-full bg-[#0f0f1b] border border-gray-600 rounded-md py-2 px-3 text-white"></div>
                     <div><label for="add-cookie" class="block text-sm font-medium">Bot Account .ROBLOSECURITY Cookie</label><input type="password" id="add-cookie" required class="mt-1 block w-full bg-[#0f0f1b] border border-gray-600 rounded-md py-2 px-3 text-white"><p class="text-xs text-gray-500 mt-1">This is stored securely and is never shown again.</p></div>
@@ -570,7 +570,7 @@
                     punish_role_id: parseInt(document.getElementById('add-punish-role').value),
                     abuse_threshold: parseInt(document.getElementById('add-abuse-threshold').value),
                     cookie: document.getElementById('add-cookie').value,
-                    alert_channel_id: parseInt(document.getElementById('add-alert-channel').value)
+                    alert_channel_id: document.getElementById('add-alert-channel').value
                 };
                 try {
                     const response = await fetch(`${API_BASE_URL}/api/groups/add`, {
