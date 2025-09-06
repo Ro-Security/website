@@ -84,6 +84,7 @@
                         <div class="p-4 border border-gray-700 rounded-lg">
                             <h3 class="font-semibold text-white mb-3"><i class="fa-solid fa-shield-halved mr-2"></i>Rank Abuse Protection</h3>
                             <div class="space-y-4">
+                                <div><label for="alert-channel" class="block text-sm font-medium">Alert Channel ID</label><input type="text" pattern="[0-9]*" id="alert-channel" class="mt-1 block w-full bg-[#0f0f1b] border border-gray-600 rounded-md py-2 px-3 text-white"></div>
                                 <div><label for="abuse-threshold" class="block text-sm font-medium">Abuse Threshold</label><input type="number" id="abuse-threshold" class="mt-1 block w-full bg-[#0f0f1b] border border-gray-600 rounded-md py-2 px-3 text-white"></div>
                                 <div><label for="punish-role" class="block text-sm font-medium">Punish Role ID</label><input type="number" id="punish-role" class="mt-1 block w-full bg-[#0f0f1b] border border-gray-600 rounded-md py-2 px-3 text-white"></div>
                             </div>
@@ -119,16 +120,19 @@
                         </div>
                     </div>
                     <div class="lg:col-span-1 space-y-6">
-                         <div id="blacklist-section" class="p-4 border border-gray-700 rounded-lg">
-                            <h3 class="font-semibold text-white mb-3"><i class="fa-solid fa-ban mr-2"></i>Group Blacklist <span class="text-xs text-purple-400"></span></h3>
-                            <div class="space-y-2"><p class="text-sm text-gray-400">Manage via Discord commands: `/blacklist add` and `/blacklist remove`</p></div>
+                         <div id="jail-section" class="p-4 border border-gray-700 rounded-lg">
+                            <h3 class="font-semibold text-white mb-3"><i class="fa-solid fa-user-lock mr-2"></i>Jail Management <span class="text-xs text-purple-400"></span></h3>
+                            <div id="jailed-list" class="space-y-2 mb-4 max-h-32 overflow-y-auto"></div>
+                            <div class="flex space-x-2">
+                                <input type="text" id="jail-user-input" placeholder="Enter Username or ID" class="block w-full bg-[#0f0f1b] border border-gray-600 rounded-md py-2 px-3 text-white">
+                                <button type="button" id="add-jail-btn" class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-4 rounded-lg btn">Jail</button>
+                            </div>
                         </div>
                          <div class="p-4 border border-gray-700 rounded-lg">
                             <h3 class="font-semibold text-white mb-3"><i class="fa-solid fa-key mr-2"></i>Admin Whitelist</h3>
-                            <div id="whitelist-list" class="space-y-2 mb-4 max-h-32 overflow-y-auto">
-                                </div>
+                            <div id="whitelist-list" class="space-y-2 mb-4 max-h-32 overflow-y-auto"></div>
                             <div class="flex space-x-2">
-                                <input type="text" id="whitelist-user-id" placeholder="Enter Roblox Username or ID" class="block w-full bg-[#0f0f1b] border-gray-600 rounded-md py-2 px-3 text-white">
+                                <input type="text" id="whitelist-user-id" placeholder="Enter Roblox Username or ID" class="block w-full bg-[#0f0f1b] border border-gray-600 rounded-md py-2 px-3 text-white">
                                 <button type="button" id="add-whitelist-btn" class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-4 rounded-lg btn">Add</button>
                             </div>
                         </div>
@@ -194,6 +198,7 @@
             const addModalCloseButton = document.getElementById('add-modal-close-button');
             const addModalCancelButton = document.getElementById('add-modal-cancel-button');
             const addWhitelistBtn = document.getElementById('add-whitelist-btn');
+            const addJailBtn = document.getElementById('add-jail-btn');
 
             let userToken = null;
             let userSubscription = null;
@@ -218,7 +223,7 @@
             function renderWhitelist(whitelist) {
                 const whitelistList = document.getElementById('whitelist-list');
                 whitelistList.innerHTML = '';
-                if (whitelist.length === 0) {
+                if (!whitelist || whitelist.length === 0) {
                     whitelistList.innerHTML = '<p class="text-sm text-gray-500">No whitelisted users.</p>';
                     return;
                 }
@@ -242,27 +247,20 @@
                 const groupId = document.getElementById('modal-group-id').value;
                 const userIdInput = document.getElementById('whitelist-user-id');
                 const userInput = userIdInput.value.trim();
-
-                if (!userInput) {
-                    showToast('Please enter a username or ID.', true);
-                    return;
-                }
+                if (!userInput) return showToast('Please enter a username or ID.', true);
 
                 let userIdToAdd;
-                
                 if (/^\d+$/.test(userInput)) {
-                    userIdToAdd = parseInt(userInput);
+                    userIdToAdd = userInput;
                     await performAddWhitelist(groupId, userIdToAdd, userIdInput);
                 } else {
                     try {
                         const idResponse = await fetch(`${API_BASE_URL}/api/roblox/get-id-from-username`, {
-                             method: 'POST',
-                             headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${userToken}` },
+                             method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${userToken}` },
                              body: JSON.stringify({ username: userInput })
                         });
                         const idResult = await idResponse.json();
                         if (!idResponse.ok) throw new Error(idResult.error);
-                        
                         userIdToAdd = idResult.id;
                         showToast(`Found user: ${idResult.name} (${idResult.id}). Adding...`);
                         await performAddWhitelist(groupId, userIdToAdd, userIdInput);
@@ -275,13 +273,11 @@
             async function performAddWhitelist(groupId, userId, inputElement) {
                  try {
                     const response = await fetch(`${API_BASE_URL}/api/group/${groupId}/whitelist`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${userToken}` },
-                        body: JSON.stringify({ user_id: userId })
+                        method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${userToken}` },
+                        body: JSON.stringify({ user_id: parseInt(userId) })
                     });
                     const result = await response.json();
                     if (!response.ok) throw new Error(result.error);
-                    
                     showToast(result.message);
                     if(inputElement) inputElement.value = '';
                     openSettingsModal(groupId);
@@ -294,13 +290,90 @@
                 const groupId = document.getElementById('modal-group-id').value;
                 try {
                     const response = await fetch(`${API_BASE_URL}/api/group/${groupId}/whitelist/remove`, {
+                        method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${userToken}` },
+                        body: JSON.stringify({ user_id: parseInt(userId) })
+                    });
+                    const result = await response.json();
+                    if (!response.ok) throw new Error(result.error);
+                    showToast(result.message);
+                    openSettingsModal(groupId);
+                } catch (error) {
+                    showToast(`Error: ${error.message}`, true);
+                }
+            }
+
+            function renderJailedList(jailedUsers) {
+                const jailedList = document.getElementById('jailed-list');
+                jailedList.innerHTML = '';
+                if (!jailedUsers || jailedUsers.length === 0) {
+                    jailedList.innerHTML = '<p class="text-sm text-gray-500">No users are currently jailed.</p>';
+                    return;
+                }
+                jailedUsers.forEach(user => {
+                    const userDiv = document.createElement('div');
+                    userDiv.className = 'flex items-center justify-between bg-[#0f0f1b] p-2 rounded';
+                    userDiv.innerHTML = `
+                        <span class="text-sm truncate" title="${user.name} (${user.user_id})">${user.name}</span>
+                        <button type="button" class="text-red-500 hover:text-red-400 remove-jail-btn" data-user-id="${user.user_id}">&times;</button>
+                    `;
+                    jailedList.appendChild(userDiv);
+                });
+                document.querySelectorAll('.remove-jail-btn').forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        removeJailedUser(btn.dataset.userId);
+                    });
+                });
+            }
+
+            async function addJailedUser() {
+                const groupId = document.getElementById('modal-group-id').value;
+                const userInput = document.getElementById('jail-user-input').value.trim();
+                if (!userInput) return showToast('Please enter a username or ID.', true);
+
+                let userId;
+                if (/^\d+$/.test(userInput)) {
+                    userId = parseInt(userInput);
+                } else {
+                    try {
+                        const idResponse = await fetch(`${API_BASE_URL}/api/roblox/get-id-from-username`, {
+                             method: 'POST',
+                             headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${userToken}` },
+                             body: JSON.stringify({ username: userInput })
+                        });
+                        const idResult = await idResponse.json();
+                        if (!idResponse.ok) throw new Error(idResult.error);
+                        userId = idResult.id;
+                    } catch (error) {
+                        return showToast(`Error: ${error.message}`, true);
+                    }
+                }
+                
+                try {
+                    const response = await fetch(`${API_BASE_URL}/api/group/${groupId}/jail`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${userToken}` },
+                        body: JSON.stringify({ user_id: userId })
+                    });
+                    const result = await response.json();
+                    if (!response.ok) throw new Error(result.error);
+                    showToast(result.message);
+                    document.getElementById('jail-user-input').value = '';
+                    openSettingsModal(groupId);
+                } catch (error) {
+                    showToast(`Error: ${error.message}`, true);
+                }
+            }
+
+            async function removeJailedUser(userId) {
+                const groupId = document.getElementById('modal-group-id').value;
+                try {
+                    const response = await fetch(`${API_BASE_URL}/api/group/${groupId}/unjail`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${userToken}` },
                         body: JSON.stringify({ user_id: parseInt(userId) })
                     });
                     const result = await response.json();
                     if (!response.ok) throw new Error(result.error);
-                    
                     showToast(result.message);
                     openSettingsModal(groupId);
                 } catch (error) {
@@ -316,7 +389,6 @@
                     });
                     const result = await response.json();
                     if (!response.ok) throw new Error(result.error);
-                    
                     showToast(result.message);
                     loadGroups();
                 } catch (error) {
@@ -457,18 +529,27 @@
             
             async function openSettingsModal(groupId) {
                 try {
-                    const response = await fetch(`${API_BASE_URL}/api/group/${groupId}/settings`, { headers: { 'Authorization': `Bearer ${userToken}` } });
-                    if (!response.ok) throw new Error('Failed to fetch settings');
-                    const settings = await response.json();
+                     const [settingsResponse, jailedResponse] = await Promise.all([
+                        fetch(`${API_BASE_URL}/api/group/${groupId}/settings`, { headers: { 'Authorization': `Bearer ${userToken}` } }),
+                        fetch(`${API_BASE_URL}/api/group/${groupId}/jailed`, { headers: { 'Authorization': `Bearer ${userToken}` } })
+                    ]);
+
+                    if (!settingsResponse.ok) throw new Error('Failed to fetch settings');
+                    if (!jailedResponse.ok) throw new Error('Failed to fetch jailed list');
+
+                    const settings = await settingsResponse.json();
+                    const jailedUsers = await jailedResponse.json();
+
                     modalGroupName.textContent = settings.core.name || `ID: ${groupId}`;
                     modalGroupIdInput.value = groupId;
+                    document.getElementById('alert-channel').value = settings.core.alert_channel_id;
                     document.getElementById('abuse-threshold').value = settings.core.abuse_threshold;
                     document.getElementById('punish-role').value = settings.core.punish_role_id;
                     const isPremium = userSubscription && userSubscription.tier === 'Premium';
-                    const premiumSections = ['exile-guard-section', 'wall-mod-section', 'blacklist-section', 'join-request-section'];
+                    const premiumSections = ['exile-guard-section', 'wall-mod-section', 'jail-section', 'join-request-section'];
                     premiumSections.forEach(id => {
                         const section = document.getElementById(id);
-                        const label = section.querySelector('span');
+                        const label = section.querySelector('h3 span');
                         if (isPremium) {
                             section.classList.remove('premium-feature');
                             if(label) label.textContent = 'Premium';
@@ -493,6 +574,7 @@
                     document.getElementById('join-requests-require-slot').checked = joinRequestSettings.require_group_slot === false ? false : true;
 
                     renderWhitelist(settings.whitelist || []);
+                    renderJailedList(jailedUsers || []);
                     settingsModal.classList.remove('hidden');
                 } catch (error) {
                     console.error(error);
@@ -513,7 +595,8 @@
                 
                 const updatedSettings = {
                     punish_role_id: parseInt(document.getElementById('punish-role').value),
-                    abuse_threshold: parseInt(document.getElementById('abuse-threshold').value)
+                    abuse_threshold: parseInt(document.getElementById('abuse-threshold').value),
+                    alert_channel_id: document.getElementById('alert-channel').value
                 };
 
                 const isPremium = userSubscription && userSubscription.tier === 'Premium';
@@ -603,6 +686,7 @@
             addModalCancelButton.addEventListener('click', closeAddGroupModal);
             addGroupForm.addEventListener('submit', handleAddGroupSubmit);
             addWhitelistBtn.addEventListener('click', addWhitelistUser);
+            addJailBtn.addEventListener('click', addJailedUser);
 
             checkAuth();
         });
