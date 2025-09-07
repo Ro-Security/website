@@ -569,9 +569,9 @@
                     document.getElementById('banned-words').value = wallModSettings.banned_words || '';
                     
                     const joinRequestSettings = settings.join_requests || {};
-                    document.getElementById('join-requests-enabled').checked = joinRequestSettings.is_enabled || false;
-                    document.getElementById('join-requests-min-age').value = joinRequestSettings.min_account_age_days || 30;
-                    document.getElementById('join-requests-require-slot').checked = joinRequestSettings.require_group_slot === false ? false : true;
+                    document.getElementById('join-requests-enabled').checked = joinRequestSettings.is_enabled ?? false;
+                    document.getElementById('join-requests-min-age').value = joinRequestSettings.min_account_age_days ?? 30;
+                    document.getElementById('join-requests-require-slot').checked = joinRequestSettings.require_group_slot ?? true;
 
                     renderWhitelist(settings.whitelist || []);
                     renderJailedList(jailedUsers || []);
