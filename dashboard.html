@@ -616,7 +616,8 @@
                         require_group_slot: document.getElementById('join-requests-require-slot').checked
                     };
                 }
-
+                //DEBUG LINE
+                console.log("Sending settings payload:", JSON.stringify(updatedSettings, null, 2));
                 try {
                     const response = await fetch(`${API_BASE_URL}/api/group/${groupId}/settings`, {
                         method: 'POST',
