@@ -291,7 +291,7 @@
                 try {
                     const response = await fetch(`${API_BASE_URL}/api/group/${groupId}/whitelist/remove`, {
                         method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${userToken}` },
-                        body: JSON.stringify({ user_id: parseInt(userId) })
+                        body: JSON.stringify({ user_id: userId })
                     });
                     const result = await response.json();
                     if (!response.ok) throw new Error(result.error);
@@ -332,7 +332,7 @@
 
                 let userId;
                 if (/^\d+$/.test(userInput)) {
-                    userId = parseInt(userInput);
+                    userId = userInput;
                 } else {
                     try {
                         const idResponse = await fetch(`${API_BASE_URL}/api/roblox/get-id-from-username`, {
@@ -370,7 +370,7 @@
                     const response = await fetch(`${API_BASE_URL}/api/group/${groupId}/unjail`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${userToken}` },
-                        body: JSON.stringify({ user_id: parseInt(userId) })
+                        body: JSON.stringify({ user_id: userId })
                     });
                     const result = await response.json();
                     if (!response.ok) throw new Error(result.error);
@@ -649,7 +649,7 @@
                 saveButton.textContent = 'Adding...';
                 saveButton.disabled = true;
                 const newGroupData = {
-                    group_id: parseInt(document.getElementById('add-group-id').value),
+                    group_id: document.getElementById('add-group-id').value,
                     punish_role_id: parseInt(document.getElementById('add-punish-role').value),
                     abuse_threshold: parseInt(document.getElementById('add-abuse-threshold').value),
                     cookie: document.getElementById('add-cookie').value,
